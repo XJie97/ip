@@ -15,97 +15,101 @@ public class Tkit {
 
         while (true) {
             String input = sc.nextLine().trim();
-
-            if (input.equals("bye")) {
-                System.out.println("____________________\n");
-                System.out.println("Goodbye fellow adult!");
-                System.out.println("____________________");
-                break;
-            }
-
-            if (input.equals("list")) {
-                System.out.println("____________________\n");
-                if (lst.isEmpty()) {
-                    System.out.println("No entries yet.");
-                } else {
-                    System.out.println("Here are the tasks in your list:");
-                    for (int i = 0; i < lst.size(); i++) {
-                        System.out.println((i + 1) + ". " + lst.get(i));
-                    }
+            try {
+                if (input.equals("bye")) {
+                    System.out.println("____________________\n");
+                    System.out.println("Goodbye fellow adult!");
+                    System.out.println("____________________");
+                    break;
                 }
-                System.out.println("____________________");
-                continue;
-            }
 
-            if (input.startsWith("mark ")) {
-                int idx = parseIndex(input.substring(5), lst.size());
-                if (idx >= 0) {
+                if (input.equals("list")) {
+                    System.out.println("____________________\n");
+                    if (lst.isEmpty()) {
+                        System.out.println("No entries yet.");
+                    } else {
+                        System.out.println("Here are the tasks in your list:");
+                        for (int i = 0; i < lst.size(); i++) {
+                            System.out.println((i + 1) + ". " + lst.get(i));
+                        }
+                    }
+                    System.out.println("____________________");
+                    continue;
+                }
+
+                if (input.startsWith("mark ")) {
+                    int idx = parseIndex(input.substring(5), lst.size());
                     Task t = lst.get(idx);
                     t.markAsDone();
                     System.out.println("____________________\n");
                     System.out.println("Nice! I've marked this task as done:");
                     System.out.println("  " + t);
                     System.out.println("____________________");
+                    continue;
                 }
-                continue;
-            }
 
-            if (input.startsWith("unmark ")) {
-                int idx = parseIndex(input.substring(7), lst.size());
-                if (idx >= 0) {
+                if (input.startsWith("unmark ")) {
+                    int idx = parseIndex(input.substring(7), lst.size());
                     Task t = lst.get(idx);
                     t.markAsUndone();
                     System.out.println("____________________\n");
-                    System.out.println("OK, I've marked this task as not done yet:");
+                    System.out.println("OK mommy, I've marked this task as not done yet:");
                     System.out.println("  " + t);
                     System.out.println("____________________");
-                }
-                continue;
-            }
-
-            if (input.startsWith("todo ")) {
-                String desc = input.substring(5).trim();
-                Task t = new Todo(desc);
-                lst.add(t);
-                printAdded(t, lst.size());
-                continue;
-            }
-
-            if (input.startsWith("deadline ")) {
-                String body = input.substring(9).trim();
-                String[] parts = body.split("\\s*/by\\s*", 2);
-                if (parts.length < 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
-                    printInvalid("Invalid deadline format. Format: deadline <TASK> /by <WHEN>");
                     continue;
                 }
-                Task t = new Deadline(parts[0].trim(), parts[1].trim());
-                lst.add(t);
-                printAdded(t, lst.size());
-                continue;
-            }
 
-            if (input.startsWith("event ")) {
-                String body = input.substring(6).trim();
-                String[] p1 = body.split("\\s*/from\\s*", 2);
-                if (p1.length < 2 || p1[0].isEmpty()) {
-                    printInvalid("Invalid event format. Format: event <EVENT> /from <START> /to <END>");
+                if (input.equals("todo")) {
+                    throw new TkitException("Mommy, what does this mean?\n" +
+                    "Todo requires a description. Format: todo <DESCRIPTION>");
+                }
+                if (input.startsWith("todo ")) {
+                    String desc = input.substring(5).trim();
+                    if (desc.isEmpty()) {
+                        throw new TkitException("Mommy, what does this mean?\n" +
+                        "Todo description cannot be empty. Format: todo <DESCRIPTION>");
+                    }
+                    Task t = new Todo(desc);
+                    lst.add(t);
+                    printAdded(t, lst.size());
                     continue;
                 }
-                String[] p2 = p1[1].split("\\s*/to\\s*", 2);
-                if (p2.length < 2 || p2[0].isEmpty() || p2[1].isEmpty()) {
-                    printInvalid("Invalid event format. Use: event <EVENT> /from <START> /to <END>");
+
+                if (input.startsWith("deadline ")) {
+                    String body = input.substring(9).trim();
+                    String[] parts = body.split("\\s*/by\\s*", 2);
+                    if (parts.length < 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
+                        throw new TkitException("Mommy, what does this mean?\n" +
+                        "Wrong deadline input format. Format: deadline <TASK> /by <DEADLINE>");
+                    }
+                    Task t = new Deadline(parts[0].trim(), parts[1].trim());
+                    lst.add(t);
+                    printAdded(t, lst.size());
                     continue;
                 }
-                Task t = new Event(p1[0].trim(), p2[0].trim(), p2[1].trim());
-                lst.add(t);
-                printAdded(t, lst.size());
-                continue;
-            }
 
-            System.out.println("____________________\n");
-            System.out.println("added: " + input);
-            lst.add(new Todo(input));
-            System.out.println("____________________");
+                if (input.startsWith("event ")) {
+                    String body = input.substring(6).trim();
+                    String[] p1 = body.split("\\s*/from\\s*", 2);
+                    if (p1.length < 2 || p1[0].trim().isEmpty()) {
+                        throw new TkitException("Mommy, what does this mean?\n" +
+                        "Wrong event input format. Format: event <EVENT> /from <START> /to <END>");
+                    }
+                    String[] p2 = p1[1].split("\\s*/to\\s*", 2);
+                    if (p2.length < 2 || p2[0].trim().isEmpty() || p2[1].trim().isEmpty()) {
+                        throw new TkitException("Mommy, what does this mean?\n" + 
+                        "Wrong event input format. Format: event <EVENT> /from <START> /to <END>");
+                    }
+                    Task t = new Event(p1[0].trim(), p2[0].trim(), p2[1].trim());
+                    lst.add(t);
+                    printAdded(t, lst.size());
+                    continue;
+                }
+
+                throw new TkitException("Unknown command: \"" + input + "\". Try: list, todo, deadline, event, mark N, unmark N, bye.");
+            } catch (TkitException e) {
+                printError(e.getMessage());
+            }
         }
 
         sc.close();
@@ -119,22 +123,31 @@ public class Tkit {
         System.out.println("____________________");
     }
 
-    private static void printInvalid(String msg) {
+    private static void printError(String msg) {
         System.out.println("____________________\n");
         System.out.println(msg);
         System.out.println("____________________");
     }
 
-    private static int parseIndex(String s, int size) {
+    private static int parseIndex(String s, int size) throws TkitException {
+        String trimmed = s.trim();
         try {
-            int n = Integer.parseInt(s.trim());
+            int n = Integer.parseInt(trimmed);
             int idx = n - 1;
-            if (idx >= 0 && idx < size) return idx;
-        } catch (NumberFormatException ignored) { }
-        System.out.println("____________________\n");
-        System.out.println("Invalid task number.");
-        System.out.println("____________________");
-        return -1;
+            if (idx < 0 || idx >= size) {
+                throw new TkitException("Invalid task number: " + n + ". List has " + size + " task(s).");
+            }
+            return idx;
+        } catch (NumberFormatException e) {
+            throw new TkitException("Task number must be an integer. Received: \"" + trimmed + "\"");
+        }
+    }
+}
+
+/** Custom exception type for this chatbot. */
+class TkitException extends Exception {
+    public TkitException(String message) {
+        super(message);
     }
 }
 
