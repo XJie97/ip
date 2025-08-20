@@ -2,14 +2,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class Tkit {
+class Task {
+    protected String description;
+    protected boolean isDone;
 
-    private static class Task {
-        final String desc;
-        boolean done;
-        Task(String d) { this.desc = d; this.done = false; }
-        @Override public String toString() { return String.format("[%s] %s", done ? "X" : " ", desc); }
+    public Task(String description) {
+        this.description = description;
+        this.isDone = false;
     }
+
+    public void markAsDone() {
+        this.isDone = true;
+    }
+
+    public void markAsUndone() {
+        this.isDone = false;
+    }
+
+    public String getStatusIcon() {
+        return isDone ? "X" : " ";
+    }
+
+    @Override
+    public String toString() {
+        return "[" + getStatusIcon() + "] " + description;
+    }
+}
+
+public class Tkit {
 
     public static void main(String[] args) {
         String identity = "not three kids in a trench coat";
@@ -49,7 +69,7 @@ public class Tkit {
                 int idx = parseIndex(input.substring(5), lst.size());
                 if (idx >= 0) {
                     Task t = lst.get(idx);
-                    t.done = true;
+                    t.markAsDone();
                     System.out.println("____________________________________________________________\n");
                     System.out.println("Nice! I've marked this task as done:");
                     System.out.println("  " + t);
@@ -62,7 +82,7 @@ public class Tkit {
                 int idx = parseIndex(input.substring(7), lst.size());
                 if (idx >= 0) {
                     Task t = lst.get(idx);
-                    t.done = false;
+                    t.markAsUndone();
                     System.out.println("____________________________________________________________\n");
                     System.out.println("OK, I've marked this task as not done yet:");
                     System.out.println("  " + t);
