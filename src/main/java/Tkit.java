@@ -4,12 +4,6 @@ import java.util.Scanner;
 
 public class Tkit {
 
-    private enum Command {
-        ADD,
-        LIST,
-        BYE,
-        UNKNOWN
-    }
 
     public static void main(String[] args) {
         String identity = "not three kids in a trench coat";
