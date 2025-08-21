@@ -59,6 +59,22 @@ public class Tkit {
                     continue;
                 }
 
+                if (input.equals("delete")) {
+                    throw new TkitException("Mommy, what does this mean?\n" +
+                        "Delete requires an index. Format: delete <TASK_NUMBER>");
+                }
+
+                if (input.startsWith("delete ")) {
+                    int idx = parseIndex(input.substring(7), lst.size());
+                    Task removed = lst.remove(idx);
+                    System.out.println("____________________\n");
+                    System.out.println("Noted. I've removed this task:");
+                    System.out.println("  " + removed);
+                    System.out.println("Now you have " + lst.size() + " tasks in the list.");
+                    System.out.println("____________________");
+                    continue;
+                }
+
                 if (input.equals("todo")) {
                     throw new TkitException("Mommy, what does this mean?\n" +
                     "Todo requires a description. Format: todo <DESCRIPTION>");
@@ -106,7 +122,7 @@ public class Tkit {
                     continue;
                 }
 
-                throw new TkitException("Unknown command: \"" + input + "\". Try: list, todo, deadline, event, mark N, unmark N, bye.");
+                throw new TkitException("Unknown command: \"" + input + "\". Try: list, todo, deadline, event, mark N, unmark N, delete N, bye.");
             } catch (TkitException e) {
                 printError(e.getMessage());
             }
@@ -144,7 +160,6 @@ public class Tkit {
     }
 }
 
-/** Custom exception type for this chatbot. */
 class TkitException extends Exception {
     public TkitException(String message) {
         super(message);
