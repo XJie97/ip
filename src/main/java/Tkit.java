@@ -10,9 +10,9 @@ public class Tkit {
 
     /**
      * Reads input from user interface, processes and prints output.
-     * Exits on "bye"
+     * Exits on "bye".
      *
-     * @param args unused
+     * @param args unused.
      */
     public static void main(String[] args) {
         String identity = "not three kids in a trench coat";
@@ -177,8 +177,8 @@ public class Tkit {
     /**
      * Prints standard notification on task add.
      *
-     * @param t     task added
-     * @param count list size after addition
+     * @param t task added.
+     * @param count list size after addition.
      */
     private static void printAdded(Task t, int count) {
         System.out.println("____________________\n");
@@ -191,7 +191,7 @@ public class Tkit {
     /**
      * Prints error notification with error message.
      *
-     * @param msg displayed error message
+     * @param msg displayed error message.
      */
     private static void printError(String msg) {
         System.out.println("____________________\n");
@@ -202,10 +202,10 @@ public class Tkit {
     /**
      * Changes index start to 1 from 0 for user-friendliness, validate list bounds.
      *
-     * @param s string containing a 1-based index
-     * @param size current list size
-     * @return zero-based index within [0, size)
-     * @throws TkitException if parsing fails or index is out of range
+     * @param s string containing a 1-based index.
+     * @param size current list size.
+     * @return zero-based index within [0, size).
+     * @throws TkitException if parsing fails or index is out of range.
      */
     private static int parseIndex(String s, int size) throws TkitException {
         String trimmed = s.trim();
@@ -243,9 +243,9 @@ enum Command {
     }
 
     /**
-     * Returns user input keyword for command
+     * Returns user input keyword for command.
      *
-     * @return user input keyword for command
+     * @return user input keyword for command.
      */
     public String keyword() {
         return keyword;
@@ -254,8 +254,8 @@ enum Command {
     /**
      * Resolves input command by first keyword.
      *
-     * @param input command input
-     * @return matching Command or UNKNOWN if none matches
+     * @param input command input.
+     * @return matching Command or UNKNOWN if none matches.
      */
     public static Command fromInput(String input) {
         String s = input == null ? "" : input.toLowerCase();
@@ -283,8 +283,8 @@ final class SplitCommand {
     /**
      * Parses a str input line into a Command and its argument string (if any).
      *
-     * @param str full input line
-     * @return parsed command object
+     * @param str full input line.
+     * @return parsed command object.
      */
     public static SplitCommand parse(String str) {
         String line = str == null ? "" : str.trim();
@@ -298,9 +298,9 @@ final class SplitCommand {
     }
 
     /**
-     * Returns argument str following command input
+     * Returns argument str following command input.
      *
-     * @return the argument string (possibly empty) following the command input
+     * @return the argument string (possibly empty) following the command input.
      */
     public String argOrEmpty() {
         return remainder;
@@ -321,9 +321,9 @@ enum Status {
     }
 
     /**
-     * Returns single-character stateIcon used in list rendering
+     * Returns single-character stateIcon used in list rendering.
      *
-     * @return single-character stateIcon used in list rendering
+     * @return single-character stateIcon used in list rendering.
      */
     public String stateIcon() {
         return stateIcon;
@@ -341,8 +341,8 @@ abstract class Task {
     /**
      * Constructs Task.
      *
-     * @param type        task type
-     * @param description human-readable description
+     * @param type task type.
+     * @param description description.
      */
     protected Task(TaskType type, String description) {
         this.type = type;
@@ -365,9 +365,9 @@ abstract class Task {
     }
 
     /**
-     * Returns [task type][status] description, "[T][X] not fail CS2030S"
+     * Returns [task type][status] description, "[T][X] not fail CS2030S".
      *
-     * @return task type in brackets + status in brackets + description, "[T][X] not fail CS2030S"
+     * @return [task type][status] description, "[T][X] not fail CS2030S".
      */
     @Override
     public String toString() {
@@ -380,6 +380,8 @@ abstract class Task {
  */
 class Todo extends Task {
     /**
+     * Returns a _Todo with the given description.
+     *
      * @param description _Todo description
      */
     public Todo(String description) {
@@ -394,10 +396,10 @@ class Deadline extends Task {
     protected final String by;
 
     /**
-     * Constructs a Deadline
+     * Constructs a Deadline.
      *
-     * @param description task description
-     * @param by deadline due date
+     * @param description task description.
+     * @param by deadline due date.
      */
     public Deadline(String description, String by) {
         super(TaskType.DEADLINE, description);
@@ -405,7 +407,7 @@ class Deadline extends Task {
     }
 
     /**
-     * Returns string of deadline with due date
+     * Returns string of deadline with due date.
      *
      * @return string of deadline with due date.
      */
@@ -423,9 +425,11 @@ class Event extends Task {
     protected final String to;
 
     /**
-     * @param description event description
-     * @param from start date
-     * @param to end date
+     * Constructs an Task of type Event.
+     *
+     * @param description event description.
+     * @param from start date.
+     * @param to end date.
      */
     public Event(String description, String from, String to) {
         super(TaskType.EVENT, description);
@@ -434,9 +438,9 @@ class Event extends Task {
     }
 
     /**
-     * Returns string of event with time range
+     * Returns string of event with time range.
      *
-     * @return string of event with time range
+     * @return string of event with time range.
      */
     @Override
     public String toString() {
@@ -460,6 +464,8 @@ enum TaskType {
     }
 
     /**
+     * Returns a String of the Task tag.
+     *
      * @return list type tag used
      */
     public String tag() {
