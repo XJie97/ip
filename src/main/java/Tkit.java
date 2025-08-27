@@ -6,19 +6,29 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 /**
  * Primary entry point and command loop for the Tkit task manager.
- * Level 7: Save
- * Read and parse user commands
- * Mutate the in-memory task list
- * Persist changes to disk immediately after each mutation
- * Load tasks from disk on startup
- * Note: Code refactored by ChatGPT per standard Java convention
+ * Level 8: Dates/Times
+ * - Read and parse user commands
+ * - Mutate the in-memory task list
+ * - Persist changes to disk immediately after each mutation
+ * - Load tasks from disk on startup
+ * - Interpret dates/times and render them in a human-friendly format
+ * - Change chatbot personality to be more suitable for a task manager.
+ *
+ * Notes:
+ * - Invalid inputs do not terminate the app; they produce an error message and continue.
+ * - Dates are stored in ISO-8601.
  */
 public class Tkit {
 
@@ -76,18 +86,15 @@ public class Tkit {
                     case TODO: {
                         String description = parsed.argOrEmpty().trim();
                         if (description.isEmpty()) {
-                            throw new TkitException(
-                                    "Mommy, what does this mean?\n" +
-                                            "Todo requires a description. Format: todo <DESCRIPTION>"
-                            );
+                            printError("I do not understand this input format\n" +
+                                    "Todo requires a description." +
+                                    "Please try Format: todo <DESCRIPTION>");
+                            break;
                         }
 
                         Task task = new Todo(description);
                         tasks.add(task);
-
-                        // persist after mutation
                         STORAGE.save(tasks);
-
                         printAdded(task, tasks.size());
                         break;
                     }
@@ -95,21 +102,27 @@ public class Tkit {
                     case DEADLINE: {
                         String body = parsed.argOrEmpty().trim();
 
-                        // split once at "/by", to allow surrounding whitespace
                         String[] parts = body.split("\\s*/by\\s*", 2);
                         if (parts.length < 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
-                            throw new TkitException(
-                                    "Mommy, what does this mean?\n" +
-                                            "Wrong deadline input format. Format: deadline <TASK> /by <DEADLINE>"
-                            );
+                            printError("I do not understand this input format\n" +
+                                    "Wrong deadline input format.\n" +
+                                    "Please try format: deadline <TASK> /by <DATE_OR_DATE_TIME>\n" +
+                                    "Examples: 2019-12-02 1800  |  2019-12-02  |  2/12/2019 1800");
+                            break;
                         }
 
-                        Task task = new Deadline(parts[0].trim(), parts[1].trim());
+                        LocalDateTime by = DateTimeUtil.tryParseToLdt(parts[1].trim());
+                        if (by == null) {
+                            printError("I do not recognize this date/time format:" +
+                                    " \"" + parts[1].trim() + "\"\n" +
+                                    "Please try format: deadline <TASK> /by <DATE_OR_DATE_TIME>\n" +
+                                    "Examples: 2019-12-02 1800  |  2019-12-02  |  2/12/2019 1800");
+                            break;
+                        }
+
+                        Task task = new Deadline(parts[0].trim(), by);
                         tasks.add(task);
-
-                        // persist after mutation
                         STORAGE.save(tasks);
-
                         printAdded(task, tasks.size());
                         break;
                     }
@@ -119,26 +132,32 @@ public class Tkit {
 
                         String[] firstSplit = body.split("\\s*/from\\s*", 2);
                         if (firstSplit.length < 2 || firstSplit[0].trim().isEmpty()) {
-                            throw new TkitException(
-                                    "Mommy, what does this mean?\n" +
-                                            "Wrong event input format. Format: event <EVENT> /from <START> /to <END>"
-                            );
+                            printError("I do not understand this input format.\n" +
+                                    "Wrong event input format.\n" +
+                                    "Please try format: event <EVENT> /from <START> /to <END>");
+                            break;
                         }
 
                         String[] secondSplit = firstSplit[1].split("\\s*/to\\s*", 2);
                         if (secondSplit.length < 2 || secondSplit[0].trim().isEmpty() || secondSplit[1].trim().isEmpty()) {
-                            throw new TkitException(
-                                    "Mommy, what does this mean?\n" +
-                                            "Wrong event input format. Format: event <EVENT> /from <START> /to <END>"
-                            );
+                            printError("I do not understand this input format.\n" +
+                                    "Wrong event input format.\n" +
+                                    "Use: event <EVENT> /from <START> /to <END>");
+                            break;
                         }
 
-                        Task task = new Event(firstSplit[0].trim(), secondSplit[0].trim(), secondSplit[1].trim());
+                        LocalDateTime from = DateTimeUtil.tryParseToLdt(secondSplit[0].trim());
+                        LocalDateTime to = DateTimeUtil.tryParseToLdt(secondSplit[1].trim());
+                        if (from == null || to == null) {
+                            printError("I do not understand this input format.\n" +
+                                    "Use: event <EVENT> /from <START> /to <END>\n" +
+                                    "Examples: 2019-12-02 1400  |  2019-12-02  |  2/12/2019 1600");
+                            break;
+                        }
+
+                        Task task = new Event(firstSplit[0].trim(), from, to);
                         tasks.add(task);
-
-                        // persist after mutation
                         STORAGE.save(tasks);
-
                         printAdded(task, tasks.size());
                         break;
                     }
@@ -147,10 +166,7 @@ public class Tkit {
                         int index = parseIndex(parsed.argOrEmpty(), tasks.size());
                         Task task = tasks.get(index);
                         task.markAsDone();
-
-                        // persist after mutation
                         STORAGE.save(tasks);
-
                         System.out.println("____________________\n");
                         System.out.println("Nice! I've marked this task as done:");
                         System.out.println("  " + task);
@@ -162,12 +178,9 @@ public class Tkit {
                         int index = parseIndex(parsed.argOrEmpty(), tasks.size());
                         Task task = tasks.get(index);
                         task.markAsUndone();
-
-                        // persist after mutation
                         STORAGE.save(tasks);
-
                         System.out.println("____________________\n");
-                        System.out.println("OK mommy, I've marked this task as not done yet:");
+                        System.out.println("OK, I've marked this task as not done yet:");
                         System.out.println("  " + task);
                         System.out.println("____________________\n");
                         break;
@@ -176,18 +189,15 @@ public class Tkit {
                     case DELETE: {
                         String arg = parsed.argOrEmpty();
                         if (arg.isEmpty()) {
-                            throw new TkitException(
-                                    "Mommy, what does this mean?\n" +
-                                            "Delete requires an index. Format: delete <TASK_NUMBER>"
-                            );
+                            printError("I do not understand this input format.\n" +
+                                    "Delete requires an index. " +
+                                    "Please try format: delete <TASK_NUMBER>");
+                            break;
                         }
 
                         int index = parseIndex(arg, tasks.size());
                         Task removed = tasks.remove(index);
-
-                        // persist after mutation
                         STORAGE.save(tasks);
-
                         System.out.println("____________________\n");
                         System.out.println("Noted. I've removed this task:");
                         System.out.println("  " + removed);
@@ -196,15 +206,54 @@ public class Tkit {
                         break;
                     }
 
+                    case ON: {
+                        String raw = parsed.argOrEmpty().trim();
+                        var targetDate = DateTimeUtil.tryParseToLocalDate(raw);
+                        if (targetDate == null) {
+                            printError("Unrecognized date.\nUse: on <DATE or DATE TIME>\nExamples: on 2019-12-02  |  on 2/12/2019");
+                            break;
+                        }
+
+                        List<Task> hits = new ArrayList<>();
+                        for (Task t : tasks) {
+                            if (t instanceof Deadline) {
+                                Deadline d = (Deadline) t;
+                                if (d.getDueAt().toLocalDate().equals(targetDate)) {
+                                    hits.add(t);
+                                }
+                            } else if (t instanceof Event) {
+                                Event e = (Event) t;
+                                if (DateTimeUtil.dateIntersects(targetDate, e.getFrom(), e.getTo())) {
+                                    hits.add(t);
+                                }
+                            }
+                        }
+
+                        System.out.println("____________________\n");
+                        if (hits.isEmpty()) {
+                            System.out.println("No deadlines/events on " + DateTimeUtil.pretty(targetDate) + ".");
+                        } else {
+                            System.out.println("Deadlines/events on " + DateTimeUtil.pretty(targetDate) + ":");
+                            for (int i = 0; i < hits.size(); i++) {
+                                System.out.println((i + 1) + ". " + hits.get(i));
+                            }
+                        }
+                        System.out.println("____________________\n");
+                        break;
+                    }
+
+
                     case UNKNOWN:
                     default:
-                        throw new TkitException(
-                                "Unknown command: \"" + rawLine +
-                                        "\". Try: list, todo, deadline, event, mark N, unmark N, delete N, bye."
-                        );
+                        printError("I do not understand this command: \"" + rawLine + "\".\n" +
+                                "Try: list, todo, deadline, event, mark N, unmark N, delete N, bye.");
+                        break;
                     }
                 } catch (TkitException e) {
                     printError(e.getMessage());
+                } catch (Exception e) {
+                    // Final safety net: do not terminate; report and continue.
+                    printError("Error: " + e.getMessage());
                 }
             }
         }
@@ -263,11 +312,11 @@ public class Tkit {
  * Format (pipe-delimited with escaping):
  *   TYPE | DONE | DESCRIPTION | OTHER...
  *   T | 1 | read book
- *   D | 0 | return book | June 6th
- *   E | 0 | project meeting | Aug 6th | 2-4pm
+ *   D | 0 | return book | 2019-12-02T18:00
+ *   E | 0 | project meeting | 2019-12-02T14:00 | 2019-12-02T16:00
  * Escaping:
- *  {@code \|} represents a literal pipe within a field</li>
- *  {@code \\} represents a literal backslash</li>
+ *  {@code \|} represents a literal pipe within a field
+ *  {@code \\} represents a literal backslash
  * Corrupted lines are skipped silently but counted for diagnostics.
  */
 final class Storage {
@@ -310,12 +359,10 @@ final class Storage {
                         corruptedCount++;
                     }
                 } catch (Exception ex) {
-                    // skip corrupted line
                     corruptedCount++;
                 }
             }
         } catch (IOException io) {
-            // treat as no data; do not crash the app
             return new ArrayList<>();
         }
 
@@ -338,7 +385,6 @@ final class Storage {
         ensureParentDir();
         Path tmp = dataFile.resolveSibling(dataFile.getFileName() + ".tmp");
 
-        // write temp file first
         try (BufferedWriter writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
             writer.write(HEADER_PREFIX + " Tkit save @ " + LocalDateTime.now());
             writer.newLine();
@@ -354,13 +400,11 @@ final class Storage {
             return;
         }
 
-        // move temp over the real file
         try {
             Files.move(tmp, dataFile,
                     StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE);
         } catch (AtomicMoveNotSupportedException am) {
-            // fallback: non-atomic replace
             try {
                 Files.move(tmp, dataFile, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException io) {
@@ -383,7 +427,6 @@ final class Storage {
                 Files.createDirectories(parent);
             }
         } catch (IOException ignored) {
-            // continue; save/load will report specific errors
         }
     }
 
@@ -402,10 +445,12 @@ final class Storage {
                 .append(escape(t.description));
 
         if (t instanceof Deadline) {
-            sb.append(" | ").append(escape(((Deadline) t).by));
+            Deadline d = (Deadline) t;
+            sb.append(" | ").append(escape(DateTimeUtil.toStorage(d.getDueAt())));
         } else if (t instanceof Event) {
             Event e = (Event) t;
-            sb.append(" | ").append(escape(e.from)).append(" | ").append(escape(e.to));
+            sb.append(" | ").append(escape(DateTimeUtil.toStorage(e.getFrom())))
+                    .append(" | ").append(escape(DateTimeUtil.toStorage(e.getTo())));
         }
 
         return sb.toString();
@@ -418,7 +463,6 @@ final class Storage {
      * @return constructed task or {@code null} if corrupted
      */
     private Task decodeLine(String line) {
-        // split on unescaped pipes
         List<String> rawFields = splitPreservingEscapes(line);
         if (rawFields.size() < 3) {
             return null;
@@ -427,7 +471,6 @@ final class Storage {
         String type = rawFields.get(0).trim();
         String done = rawFields.get(1).trim();
 
-        // unescape all fields after trimming
         for (int i = 0; i < rawFields.size(); i++) {
             rawFields.set(i, unescape(rawFields.get(i).trim()));
         }
@@ -441,11 +484,16 @@ final class Storage {
             break;
         case "D":
             if (rawFields.size() < 4) return null;
-            task = new Deadline(description, rawFields.get(3));
+            LocalDateTime by = DateTimeUtil.tryParseStorageOrInput(rawFields.get(3));
+            if (by == null) return null;
+            task = new Deadline(description, by);
             break;
         case "E":
             if (rawFields.size() < 5) return null;
-            task = new Event(description, rawFields.get(3), rawFields.get(4));
+            LocalDateTime from = DateTimeUtil.tryParseStorageOrInput(rawFields.get(3));
+            LocalDateTime to = DateTimeUtil.tryParseStorageOrInput(rawFields.get(4));
+            if (from == null || to == null) return null;
+            task = new Event(description, from, to);
             break;
         default:
             return null;
@@ -454,29 +502,18 @@ final class Storage {
         if ("1".equals(done)) {
             task.markAsDone();
         } else if (!"0".equals(done)) {
-            // invalid done flag → treat as corrupted
             return null;
         }
 
         return task;
     }
 
-    /**
-     * Escapes literal backslashes and pipes within a field.
-     *
-     * @param s input field
-     * @return escaped field
-     */
+    /** Escapes literal backslashes and pipes within a field. */
     private static String escape(String s) {
         return s.replace("\\", "\\\\").replace("|", "\\|");
     }
 
-    /**
-     * Reverses {@link #escape(String)} on a field.
-     *
-     * @param s escaped field
-     * @return raw field
-     */
+    /** Reverses {@link #escape(String)} on a field. */
     private static String unescape(String s) {
         StringBuilder out = new StringBuilder();
         boolean escaping = false;
@@ -492,18 +529,12 @@ final class Storage {
             }
         }
         if (escaping) {
-            // trailing backslash; treat as literal
             out.append('\\');
         }
         return out.toString();
     }
 
-    /**
-     * Splits a line by unescaped {@code |}, preserving escaped separators.
-     *
-     * @param line encoded line
-     * @return list of raw fields (still escaped)
-     */
+    /** Splits a line by unescaped {@code |}, preserving escaped separators. */
     private static List<String> splitPreservingEscapes(String line) {
         List<String> fields = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -520,7 +551,6 @@ final class Storage {
 
             if (c == '\\') {
                 escaping = true;
-                // do not append yet; next character decides
                 continue;
             }
 
@@ -537,9 +567,7 @@ final class Storage {
     }
 }
 
-/**
- * Command keywords recognized by the parser.
- */
+/** Command keywords recognized by the parser. */
 enum Command {
     BYE("bye"),
     UNKNOWN(""),
@@ -549,7 +577,9 @@ enum Command {
     EVENT("event"),
     MARK("mark"),
     UNMARK("unmark"),
-    DELETE("delete");
+    DELETE("delete"),
+    ON("on");
+
 
     private final String keyword;
 
@@ -557,21 +587,12 @@ enum Command {
         this.keyword = keyword;
     }
 
-    /**
-     * Returns the keyword string that triggers this command.
-     *
-     * @return command keyword
-     */
+    /** Returns the keyword string that triggers this command. */
     public String keyword() {
         return keyword;
     }
 
-    /**
-     * Maps the first token of an input line to a {@link Command}.
-     *
-     * @param input first token (case-insensitive)
-     * @return matching command or {@link #UNKNOWN}
-     */
+    /** Maps the first token of an input line to a {@link Command}. */
     public static Command fromInput(String input) {
         String s = input == null ? "" : input.toLowerCase();
         for (Command c : values()) {
@@ -583,9 +604,7 @@ enum Command {
     }
 }
 
-/**
- * Lightweight representation of a parsed command: verb + remainder.
- */
+/** Lightweight representation of a parsed command: verb + remainder. */
 final class SplitCommand {
     final Command command;
     final String remainder; // may be empty
@@ -595,12 +614,7 @@ final class SplitCommand {
         this.remainder = remainder == null ? "" : remainder;
     }
 
-    /**
-     * Parses a full input line into command and trailing argument string.
-     *
-     * @param line full user input
-     * @return parsed {@link SplitCommand}
-     */
+    /** Parses a full input line into command and trailing argument string. */
     public static SplitCommand parse(String line) {
         String normalized = line == null ? "" : line.trim();
         if (normalized.isEmpty()) {
@@ -612,19 +626,13 @@ final class SplitCommand {
         return new SplitCommand(cmd, rest);
     }
 
-    /**
-     * Returns the remainder after the command token, or an empty string.
-     *
-     * @return remainder string
-     */
+    /** Returns the remainder after the command token, or an empty string. */
     public String argOrEmpty() {
         return remainder;
     }
 }
 
-/**
- * Display status of a task with a single-character icon.
- */
+/** Display status of a task with a single-character icon. */
 enum Status {
     DONE("X"),
     NOT_DONE(" ");
@@ -635,30 +643,19 @@ enum Status {
         this.stateIcon = stateIcon;
     }
 
-    /**
-     * Returns the one-character state icon used in list rendering.
-     *
-     * @return icon string
-     */
+    /** Returns the one-character state icon used in list rendering. */
     public String stateIcon() {
         return stateIcon;
     }
 }
 
-/**
- * Common base type for all tasks.
- */
+/** Common base type for all tasks. */
 abstract class Task {
     protected final String description;
     protected Status status;
     protected final TaskType type;
 
-    /**
-     * Constructs a task with a type and description. Default status is NOT_DONE.
-     *
-     * @param type        task type tag
-     * @param description human-readable description
-     */
+    /** Constructs a task with a type and description. Default status is NOT_DONE. */
     protected Task(TaskType type, String description) {
         this.type = type;
         this.description = description;
@@ -675,93 +672,65 @@ abstract class Task {
         this.status = Status.NOT_DONE;
     }
 
-    /**
-     * Renders as {@code [Type][State] Description}, e.g. {@code [T][X] read book}.
-     *
-     * @return display string
-     */
+    /** Renders as {@code [Type][State] Description}. */
     @Override
     public String toString() {
         return "[" + type.tag() + "][" + status.stateIcon() + "] " + description;
     }
 }
 
-/**
- * Task type representing a simple to-do with only a description.
- */
+/** Task type representing a simple to-do with only a description. */
 class Todo extends Task {
-    /**
-     * Constructs a {@code Todo}.
-     *
-     * @param description description text
-     */
     public Todo(String description) {
         super(TaskType.TODO, description);
     }
 }
 
-/**
- * Task type with a deadline date/time.
- */
+/** Task type with a deadline date/time. */
 class Deadline extends Task {
-    protected final String by;
+    private final LocalDateTime dueAt;
 
-    /**
-     * Constructs a {@code Deadline}.
-     *
-     * @param description task description
-     * @param by          deadline label
-     */
-    public Deadline(String description, String by) {
+    public Deadline(String description, LocalDateTime dueAt) {
         super(TaskType.DEADLINE, description);
-        this.by = by;
+        this.dueAt = dueAt;
     }
 
-    /**
-     * Appends {@code (by: ...)} to the base representation.
-     *
-     * @return display string
-     */
+    public LocalDateTime getDueAt() {
+        return dueAt;
+    }
+
     @Override
     public String toString() {
-        return super.toString() + " (by: " + by + ")";
+        return super.toString() + " (by: " + DateTimeUtil.pretty(dueAt) + ")";
     }
 }
 
-/**
- * Task type describing a time-ranged event.
- */
+/** Task type describing a time-ranged event. */
 class Event extends Task {
-    protected final String from;
-    protected final String to;
+    private final LocalDateTime from;
+    private final LocalDateTime to;
 
-    /**
-     * Constructs an {@code Event}.
-     *
-     * @param description event description
-     * @param from        start label
-     * @param to          end label
-     */
-    public Event(String description, String from, String to) {
+    public Event(String description, LocalDateTime from, LocalDateTime to) {
         super(TaskType.EVENT, description);
         this.from = from;
         this.to = to;
     }
 
-    /**
-     * Appends {@code (from: ... to: ...)} to the base representation.
-     *
-     * @return display string
-     */
+    public LocalDateTime getFrom() {
+        return from;
+    }
+
+    public LocalDateTime getTo() {
+        return to;
+    }
+
     @Override
     public String toString() {
-        return super.toString() + " (from: " + from + " to: " + to + ")";
+        return super.toString() + " (from: " + DateTimeUtil.pretty(from) + " to: " + DateTimeUtil.pretty(to) + ")";
     }
 }
 
-/**
- * Supported task categories. Each value carries a single-letter tag.
- */
+/** Supported task categories. Each value carries a single-letter tag. */
 enum TaskType {
     TODO("T"),
     DEADLINE("D"),
@@ -773,26 +742,158 @@ enum TaskType {
         this.tag = tag;
     }
 
-    /**
-     * Returns the single-letter tag for this type.
-     *
-     * @return tag string
-     */
+    /** Returns the single-letter tag for this type. */
     public String tag() {
         return tag;
     }
 }
 
-/**
- * Checked exception used for input and command errors in Tkit.
- */
+/** Checked exception used for input and command errors in Tkit. */
 class TkitException extends Exception {
-    /**
-     * Constructs an exception with a message intended for user display.
-     *
-     * @param message error text
-     */
     public TkitException(String message) {
         super(message);
     }
+}
+
+/**
+ * Date/time parsing and formatting helpers for Level 8.
+ *
+ * Supported input examples:
+ *  - 2019-12-02
+ *  - 2019-12-02 1800
+ *  - 2/12/2019
+ *  - 2/12/2019 1800
+ *
+ * Storage format is ISO-8601 LocalDateTime (e.g., 2019-12-02T18:00).
+ * Display format is "MMM d yyyy" or "MMM d yyyy HH:mm" if time is non-midnight.
+ */
+final class DateTimeUtil {
+    private DateTimeUtil() {}
+
+    // Accept ISO yyyy-MM-dd[ HHmm] OR d/M/yyyy[ HHmm]
+    private static final DateTimeFormatter INPUT_FMT = new DateTimeFormatterBuilder()
+            // First optional branch: yyyy-MM-dd[ HHmm]
+            .appendOptional(new DateTimeFormatterBuilder()
+                    .appendPattern("yyyy-MM-dd")
+                    .optionalStart().appendLiteral(' ')
+                    .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                    .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                    .optionalEnd()
+                    .toFormatter())
+            // Second optional branch: d/M/yyyy[ HHmm]
+            .appendOptional(new DateTimeFormatterBuilder()
+                    .appendValue(ChronoField.DAY_OF_MONTH)
+                    .appendLiteral('/')
+                    .appendValue(ChronoField.MONTH_OF_YEAR)
+                    .appendLiteral('/')
+                    .appendValue(ChronoField.YEAR)
+                    .optionalStart().appendLiteral(' ')
+                    .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                    .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                    .optionalEnd()
+                    .toFormatter())
+            .toFormatter();
+
+    private static final DateTimeFormatter OUT_DATE = DateTimeFormatter.ofPattern("MMM d yyyy");
+    private static final DateTimeFormatter OUT_DATE_TIME = DateTimeFormatter.ofPattern("MMM d yyyy HH:mm");
+
+    /** Strict parse; throws on failure (kept for internal use). */
+    public static LocalDateTime parseToLdt(String raw) {
+        String s = raw.trim();
+        try {
+            return LocalDateTime.parse(s, INPUT_FMT);
+        } catch (Exception ignore) {
+        }
+        try {
+            LocalDate d = LocalDate.parse(s, INPUT_FMT);
+            return d.atStartOfDay();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("I do not understand this date/time format\n" +
+                    "Please try this instead: \"" + raw + "\"", e);
+        }
+    }
+
+    /** Non-throwing parse; returns null on failure. */
+    public static LocalDateTime tryParseToLdt(String raw) {
+        String s = raw.trim();
+        try {
+            return LocalDateTime.parse(s, INPUT_FMT);
+        } catch (Exception ignore) {
+        }
+        try {
+            LocalDate d = LocalDate.parse(s, INPUT_FMT);
+            return d.atStartOfDay();
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
+
+    /** Pretty-print: omit time if midnight, else include HH:mm. */
+    public static String pretty(LocalDateTime ldt) {
+        if (ldt.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+            return ldt.format(OUT_DATE);
+        }
+        return ldt.format(OUT_DATE_TIME);
+    }
+
+    /** Lossless storage format (ISO-8601). */
+    public static String toStorage(LocalDateTime ldt) {
+        return ldt.toString();
+    }
+
+    /** Strict storage parse with fallback to input; throws on failure. */
+    public static LocalDateTime parseStorageOrInput(String text) {
+        String s = text.trim();
+        try {
+            return LocalDateTime.parse(s);
+        } catch (Exception ignore) {
+            return parseToLdt(s);
+        }
+    }
+
+    /** Non-throwing storage parse with fallback to input; returns null on failure. */
+    public static LocalDateTime tryParseStorageOrInput(String text) {
+        String s = text.trim();
+        try {
+            return LocalDateTime.parse(s);
+        } catch (Exception ignore) {
+        }
+        return tryParseToLdt(s);
+    }
+    /** Non-throwing parse to LocalDate; returns null on failure. */
+    public static LocalDate tryParseToLocalDate(String raw) {
+        if (raw == null) return null;
+        String s = raw.trim();
+        // Try full date-time first, then date-only
+        try {
+            return LocalDateTime.parse(s, INPUT_FMT).toLocalDate();
+        } catch (Exception ignore) { }
+        try {
+            return LocalDate.parse(s, INPUT_FMT);
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
+
+    /** Pretty-print for a LocalDate using the same OUT_DATE pattern. */
+    public static String pretty(LocalDate date) {
+        return date.format(OUT_DATE);
+    }
+
+    /**
+     * True if the given calendar date is:
+     *  - the same date as the start, or
+     *  - the same date as the end, or
+     *  - strictly between start and end by date (inclusive).
+     * Assumes start <= end; if not, swaps.
+     */
+    public static boolean dateIntersects(LocalDate date, LocalDateTime start, LocalDateTime end) {
+        if (start.isAfter(end)) {
+            var tmp = start; start = end; end = tmp;
+        }
+        LocalDate s = start.toLocalDate();
+        LocalDate e = end.toLocalDate();
+        return !(date.isBefore(s) || date.isAfter(e));
+    }
+
 }
