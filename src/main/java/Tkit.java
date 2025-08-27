@@ -1,221 +1,257 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 /**
- * Manages task list.
- * Supports operations: creating, marking, unmarking, deleting tasks, exiting.
+ * Primary entry point and command loop for the Tkit task manager.
+ * Level 7: Save
+ * Read and parse user commands
+ * Mutate the in-memory task list
+ * Persist changes to disk immediately after each mutation
+ * Load tasks from disk on startup
+ * Note: Code refactored by ChatGPT per standard Java convention
  */
 public class Tkit {
 
+    /** Identity banner line. */
+    private static final String IDENTITY = "not three kids in a trench coat";
+
+    /** Storage component handling serialization and durability. */
+    private static final Storage STORAGE = new Storage();
+
     /**
-     * Reads input from user interface, processes and prints output.
-     * Exits on "bye".
+     * Reads input, executes commands, persists changes, and prints results.
+     * Exits when the user enters {@code bye}.
      *
      * @param args unused.
      */
     public static void main(String[] args) {
-        String identity = "not three kids in a trench coat";
-        Scanner sc = new Scanner(System.in);
-        List<Task> lst = new ArrayList<>();
-
-        System.out.println("____________________ \n\nHello from  " + identity);
+        // --- startup banner ---
+        System.out.println("____________________ \n\nHello from  " + IDENTITY);
         System.out.println("What do you mean we are three kids in a trench coat?");
         System.out.println("We are an adult person! \n____________________\n");
 
-        while (true) {
-            String str = sc.nextLine().trim();
-            try {
-                SplitCommand spc = SplitCommand.parse(str);
+        // --- load existing tasks (if any) ---
+        List<Task> tasks = STORAGE.load();
 
-                switch (spc.command) {
-                case BYE: {
-                    System.out.println("____________________\n");
-                    System.out.println("Goodbye, fellow adult!");
-                    System.out.println("____________________\n");
+        try (Scanner input = new Scanner(System.in)) {
+            // --- command loop ---
+            while (true) {
+                String rawLine = input.nextLine().trim();
 
-                    sc.close();
+                try {
+                    SplitCommand parsed = SplitCommand.parse(rawLine);
 
-                    return;
-                }
-                case LIST: {
-                    System.out.println("____________________\n");
+                    switch (parsed.command) {
+                    case BYE: {
+                        System.out.println("____________________\n");
+                        System.out.println("Goodbye, fellow adult!");
+                        System.out.println("____________________\n");
+                        return;
+                    }
 
-                    if (lst.isEmpty()) {
-                        System.out.println("There are no entries yet.");
-                    } else {
-                        System.out.println("Here are the tasks in your list:");
-                        for (int i = 0; i < lst.size(); i++) {
-                            System.out.println((i + 1) + ". " + lst.get(i));
+                    case LIST: {
+                        System.out.println("____________________\n");
+                        if (tasks.isEmpty()) {
+                            System.out.println("There are no entries yet.");
+                        } else {
+                            System.out.println("Here are the tasks in your list:");
+                            for (int i = 0; i < tasks.size(); i++) {
+                                System.out.println((i + 1) + ". " + tasks.get(i));
+                            }
                         }
+                        System.out.println("____________________\n");
+                        break;
                     }
 
-                    System.out.println("____________________\n");
+                    case TODO: {
+                        String description = parsed.argOrEmpty().trim();
+                        if (description.isEmpty()) {
+                            throw new TkitException(
+                                    "Mommy, what does this mean?\n" +
+                                            "Todo requires a description. Format: todo <DESCRIPTION>"
+                            );
+                        }
 
-                    break;
-                }
-                case TODO: {
-                    String desc = spc.argOrEmpty().trim();
+                        Task task = new Todo(description);
+                        tasks.add(task);
 
-                    if (desc.isEmpty()) {
-                        throw new TkitException("Mommy, what does this mean?\n" +
-                                "Todo requires a description. Format: todo <DESCRIPTION>");
+                        // persist after mutation
+                        STORAGE.save(tasks);
+
+                        printAdded(task, tasks.size());
+                        break;
                     }
 
-                    Task t = new Todo(desc);
-                    lst.add(t);
+                    case DEADLINE: {
+                        String body = parsed.argOrEmpty().trim();
 
-                    printAdded(t, lst.size());
+                        // split once at "/by", to allow surrounding whitespace
+                        String[] parts = body.split("\\s*/by\\s*", 2);
+                        if (parts.length < 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
+                            throw new TkitException(
+                                    "Mommy, what does this mean?\n" +
+                                            "Wrong deadline input format. Format: deadline <TASK> /by <DEADLINE>"
+                            );
+                        }
 
-                    break;
-                }
-                case DEADLINE: {
-                    String body = spc.argOrEmpty().trim();
-                    // Split the input string into at most 2 parts, using the pattern \s*/by\s* as the separator.
-                    // \\s* → In Java string literals, \\ means a single backslash in the regex.
-                    // \\s means \s in regex, matches whitespace (spaces, tabs, newlines).
-                    // \\s* means "zero or more whitespace characters."
-                    // /by → Matches the literal string /by.
-                    // \\s* (again) → Allow optional spaces after /by.
-                    // Split at /by, allowing spaces before and after. Split into 2 pieces.
+                        Task task = new Deadline(parts[0].trim(), parts[1].trim());
+                        tasks.add(task);
 
-                    String[] parts = body.split("\\s*/by\\s*", 2);
+                        // persist after mutation
+                        STORAGE.save(tasks);
 
-                    if (parts.length < 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
-                        throw new TkitException("Mommy, what does this mean?\n" +
-                                "Wrong deadline input format. Format: deadline <TASK> /by <DEADLINE>");
+                        printAdded(task, tasks.size());
+                        break;
                     }
 
-                    Task t = new Deadline(parts[0].trim(), parts[1].trim());
-                    lst.add(t);
+                    case EVENT: {
+                        String body = parsed.argOrEmpty().trim();
 
-                    printAdded(t, lst.size());
+                        String[] firstSplit = body.split("\\s*/from\\s*", 2);
+                        if (firstSplit.length < 2 || firstSplit[0].trim().isEmpty()) {
+                            throw new TkitException(
+                                    "Mommy, what does this mean?\n" +
+                                            "Wrong event input format. Format: event <EVENT> /from <START> /to <END>"
+                            );
+                        }
 
-                    break;
-                }
-                case EVENT: {
-                    String body = spc.argOrEmpty().trim();
-                    // \\s*: optional spaces before /from.
-                    // /from: keyword.
-                    // \\s* → optional spaces after keyword.
-                    // split at 'from', allowing spaces before/after. Split into 2 pieces.
-                    String[] p1 = body.split("\\s*/from\\s*", 2);
+                        String[] secondSplit = firstSplit[1].split("\\s*/to\\s*", 2);
+                        if (secondSplit.length < 2 || secondSplit[0].trim().isEmpty() || secondSplit[1].trim().isEmpty()) {
+                            throw new TkitException(
+                                    "Mommy, what does this mean?\n" +
+                                            "Wrong event input format. Format: event <EVENT> /from <START> /to <END>"
+                            );
+                        }
 
-                    if (p1.length < 2 || p1[0].trim().isEmpty()) {
-                        throw new TkitException("Mommy, what does this mean?\n" +
-                                "Wrong event input format. Format: event <EVENT> /from <START> /to <END>");
+                        Task task = new Event(firstSplit[0].trim(), secondSplit[0].trim(), secondSplit[1].trim());
+                        tasks.add(task);
+
+                        // persist after mutation
+                        STORAGE.save(tasks);
+
+                        printAdded(task, tasks.size());
+                        break;
                     }
 
-                    // Split the second half again, at /to. Split into 2 pieces.
-                    String[] p2 = p1[1].split("\\s*/to\\s*", 2);
-                    if (p2.length < 2 || p2[0].trim().isEmpty() || p2[1].trim().isEmpty()) {
-                        throw new TkitException("Mommy, what does this mean?\n" +
-                                "Wrong event input format. Format: event <EVENT> /from <START> /to <END>");
-                    }
-                    Task t = new Event(p1[0].trim(), p2[0].trim(), p2[1].trim());
-                    lst.add(t);
-                    printAdded(t, lst.size());
-                    break;
-                }
-                case MARK: {
-                    int idx = parseIndex(spc.argOrEmpty(), lst.size());
-                    Task t = lst.get(idx);
+                    case MARK: {
+                        int index = parseIndex(parsed.argOrEmpty(), tasks.size());
+                        Task task = tasks.get(index);
+                        task.markAsDone();
 
-                    t.markAsDone();
+                        // persist after mutation
+                        STORAGE.save(tasks);
 
-                    System.out.println("____________________\n");
-                    System.out.println("Nice! I've marked this task as done:");
-                    System.out.println("  " + t);
-                    System.out.println("____________________\n");
-
-                    break;
-                }
-                case UNMARK: {
-                    int idx = parseIndex(spc.argOrEmpty(), lst.size());
-                    Task t = lst.get(idx);
-
-                    t.markAsUndone();
-
-                    System.out.println("____________________\n");
-                    System.out.println("OK mommy, I've marked this task as not done yet:");
-                    System.out.println("  " + t);
-                    System.out.println("____________________\n");
-
-                    break;
-                }
-                case DELETE: {
-                    String arg = spc.argOrEmpty();
-
-                    if (arg.isEmpty()) {
-                        throw new TkitException("Mommy, what does this mean?\n" +
-                                "Delete requires an index. Format: delete <TASK_NUMBER>");
+                        System.out.println("____________________\n");
+                        System.out.println("Nice! I've marked this task as done:");
+                        System.out.println("  " + task);
+                        System.out.println("____________________\n");
+                        break;
                     }
 
-                    int idx = parseIndex(arg, lst.size());
-                    Task removed = lst.remove(idx);
+                    case UNMARK: {
+                        int index = parseIndex(parsed.argOrEmpty(), tasks.size());
+                        Task task = tasks.get(index);
+                        task.markAsUndone();
 
-                    System.out.println("____________________\n");
-                    System.out.println("Noted. I've removed this task:");
-                    System.out.println("  " + removed);
-                    System.out.println("Now you have " + lst.size() + " tasks in the list.");
-                    System.out.println("____________________\n");
+                        // persist after mutation
+                        STORAGE.save(tasks);
 
-                    break;
+                        System.out.println("____________________\n");
+                        System.out.println("OK mommy, I've marked this task as not done yet:");
+                        System.out.println("  " + task);
+                        System.out.println("____________________\n");
+                        break;
+                    }
+
+                    case DELETE: {
+                        String arg = parsed.argOrEmpty();
+                        if (arg.isEmpty()) {
+                            throw new TkitException(
+                                    "Mommy, what does this mean?\n" +
+                                            "Delete requires an index. Format: delete <TASK_NUMBER>"
+                            );
+                        }
+
+                        int index = parseIndex(arg, tasks.size());
+                        Task removed = tasks.remove(index);
+
+                        // persist after mutation
+                        STORAGE.save(tasks);
+
+                        System.out.println("____________________\n");
+                        System.out.println("Noted. I've removed this task:");
+                        System.out.println("  " + removed);
+                        System.out.println("Now you have " + tasks.size() + " tasks in the list.");
+                        System.out.println("____________________\n");
+                        break;
+                    }
+
+                    case UNKNOWN:
+                    default:
+                        throw new TkitException(
+                                "Unknown command: \"" + rawLine +
+                                        "\". Try: list, todo, deadline, event, mark N, unmark N, delete N, bye."
+                        );
+                    }
+                } catch (TkitException e) {
+                    printError(e.getMessage());
                 }
-
-                case UNKNOWN:
-                default:
-                    throw new TkitException("Unknown command: \"" + str +
-                            "\". Try: list, todo, deadline, event, mark N, unmark N, delete N, bye.");
-                }
-            } catch (TkitException e) {
-                printError(e.getMessage());
             }
         }
     }
 
     /**
-     * Prints standard notification on task add.
+     * Prints the standard "added" notification for a newly appended task.
      *
-     * @param t task added.
-     * @param count list size after addition.
+     * @param taskAdded  the task that was just added
+     * @param totalCount the current size of the list after the addition
      */
-    private static void printAdded(Task t, int count) {
+    private static void printAdded(Task taskAdded, int totalCount) {
         System.out.println("____________________\n");
         System.out.println("Got it. I've added this task:");
-        System.out.println("  " + t);
-        System.out.println("Now you have " + count + " tasks in the list.");
+        System.out.println("  " + taskAdded);
+        System.out.println("Now you have " + totalCount + " tasks in the list.");
         System.out.println("____________________\n");
     }
 
     /**
-     * Prints error notification with error message.
+     * Prints an error notification with the given message.
      *
-     * @param msg displayed error message.
+     * @param message the error text to display
      */
-    private static void printError(String msg) {
+    private static void printError(String message) {
         System.out.println("____________________\n");
-        System.out.println(msg);
+        System.out.println(message);
         System.out.println("____________________\n");
     }
 
     /**
-     * Changes index start to 1 from 0 for user-friendliness, validate list bounds.
+     * Parses a 1-based index from user input and validates it for the current list size.
      *
-     * @param s string containing a 1-based index.
-     * @param size current list size.
-     * @return zero-based index within [0, size).
-     * @throws TkitException if parsing fails or index is out of range.
+     * @param userSuppliedIndex string containing a 1-based index
+     * @param currentSize       current task list size
+     * @return zero-based index within {@code [0, currentSize)}
+     * @throws TkitException if parsing fails or the index is out of range
      */
-    private static int parseIndex(String s, int size) throws TkitException {
-        String trimmed = s.trim();
+    private static int parseIndex(String userSuppliedIndex, int currentSize) throws TkitException {
+        String trimmed = userSuppliedIndex.trim();
         try {
-            int n = Integer.parseInt(trimmed);
-            int idx = n - 1;
-            if (idx < 0 || idx >= size) {
-                throw new TkitException("Invalid task number: " + n + ". List has " + size + " task(s).");
+            int oneBased = Integer.parseInt(trimmed);
+            int zeroBased = oneBased - 1;
+            if (zeroBased < 0 || zeroBased >= currentSize) {
+                throw new TkitException("Invalid task number: " + oneBased + ". List has " + currentSize + " task(s).");
             }
-            return idx;
+            return zeroBased;
         } catch (NumberFormatException e) {
             throw new TkitException("Task number must be of type int. Received: \"" + trimmed + "\"");
         }
@@ -223,7 +259,286 @@ public class Tkit {
 }
 
 /**
- * Enumerates for keyword mapping and parsing.
+ * Encapsulates reading from and writing to an OS-independent relative file path.
+ * Format (pipe-delimited with escaping):
+ *   TYPE | DONE | DESCRIPTION | OTHER...
+ *   T | 1 | read book
+ *   D | 0 | return book | June 6th
+ *   E | 0 | project meeting | Aug 6th | 2-4pm
+ * Escaping:
+ *  {@code \|} represents a literal pipe within a field</li>
+ *  {@code \\} represents a literal backslash</li>
+ * Corrupted lines are skipped silently but counted for diagnostics.
+ */
+final class Storage {
+
+    /** Relative, OS-independent data file path. */
+    private final Path dataFile = Path.of("data", "Tkit.txt");
+
+    /** Line delimiter used for user-readable comments in temp writes. */
+    private static final String HEADER_PREFIX = "#";
+
+    /**
+     * Loads tasks from disk. Creates parent directory if missing.
+     * Missing file returns an empty list. Corrupted lines are ignored.
+     *
+     * @return list of Tasks parsed from the data file
+     */
+    public List<Task> load() {
+        ensureParentDir();
+
+        if (!Files.exists(dataFile)) {
+            return new ArrayList<>();
+        }
+
+        List<Task> loaded = new ArrayList<>();
+        int corruptedCount = 0;
+
+        try (BufferedReader reader = Files.newBufferedReader(dataFile, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith(HEADER_PREFIX)) {
+                    // skip blank lines and comments
+                    continue;
+                }
+                try {
+                    Task t = decodeLine(trimmed);
+                    if (t != null) {
+                        loaded.add(t);
+                    } else {
+                        corruptedCount++;
+                    }
+                } catch (Exception ex) {
+                    // skip corrupted line
+                    corruptedCount++;
+                }
+            }
+        } catch (IOException io) {
+            // treat as no data; do not crash the app
+            return new ArrayList<>();
+        }
+
+        if (corruptedCount > 0) {
+            System.out.println("____________________\n");
+            System.out.println("Warning: " + corruptedCount + " corrupted line(s) ignored while loading.");
+            System.out.println("____________________\n");
+        }
+
+        return loaded;
+    }
+
+    /**
+     * Saves the entire task list to disk. Write-to-temp then atomic move.
+     * Creates parent directory on demand.
+     *
+     * @param tasks current snapshot of tasks to persist
+     */
+    public void save(List<Task> tasks) {
+        ensureParentDir();
+        Path tmp = dataFile.resolveSibling(dataFile.getFileName() + ".tmp");
+
+        // write temp file first
+        try (BufferedWriter writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
+            writer.write(HEADER_PREFIX + " Tkit save @ " + LocalDateTime.now());
+            writer.newLine();
+
+            for (Task t : tasks) {
+                writer.write(encodeTask(t));
+                writer.newLine();
+            }
+        } catch (IOException io) {
+            System.out.println("____________________\n");
+            System.out.println("Warning: failed to write data file: " + io.getMessage());
+            System.out.println("____________________\n");
+            return;
+        }
+
+        // move temp over the real file
+        try {
+            Files.move(tmp, dataFile,
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException am) {
+            // fallback: non-atomic replace
+            try {
+                Files.move(tmp, dataFile, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException io) {
+                System.out.println("____________________\n");
+                System.out.println("Warning: failed to finalize data file: " + io.getMessage());
+                System.out.println("____________________\n");
+            }
+        } catch (IOException io) {
+            System.out.println("____________________\n");
+            System.out.println("Warning: failed to finalize data file: " + io.getMessage());
+            System.out.println("____________________\n");
+        }
+    }
+
+    /** Ensures parent directory exists; creates it if missing. */
+    private void ensureParentDir() {
+        try {
+            Path parent = dataFile.getParent();
+            if (parent != null && !Files.exists(parent)) {
+                Files.createDirectories(parent);
+            }
+        } catch (IOException ignored) {
+            // continue; save/load will report specific errors
+        }
+    }
+
+    /**
+     * Serializes a task into a single line.
+     *
+     * @param t task to encode
+     * @return encoded line
+     */
+    private String encodeTask(Task t) {
+        String doneFlag = (t.status == Status.DONE) ? "1" : "0";
+        String type = t.type.tag();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(type).append(" | ").append(doneFlag).append(" | ")
+                .append(escape(t.description));
+
+        if (t instanceof Deadline) {
+            sb.append(" | ").append(escape(((Deadline) t).by));
+        } else if (t instanceof Event) {
+            Event e = (Event) t;
+            sb.append(" | ").append(escape(e.from)).append(" | ").append(escape(e.to));
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Deserializes a line into a task. Returns {@code null} if the line is not decodable.
+     *
+     * @param line encoded line
+     * @return constructed task or {@code null} if corrupted
+     */
+    private Task decodeLine(String line) {
+        // split on unescaped pipes
+        List<String> rawFields = splitPreservingEscapes(line);
+        if (rawFields.size() < 3) {
+            return null;
+        }
+
+        String type = rawFields.get(0).trim();
+        String done = rawFields.get(1).trim();
+
+        // unescape all fields after trimming
+        for (int i = 0; i < rawFields.size(); i++) {
+            rawFields.set(i, unescape(rawFields.get(i).trim()));
+        }
+
+        String description = rawFields.get(2);
+        Task task;
+
+        switch (type) {
+        case "T":
+            task = new Todo(description);
+            break;
+        case "D":
+            if (rawFields.size() < 4) return null;
+            task = new Deadline(description, rawFields.get(3));
+            break;
+        case "E":
+            if (rawFields.size() < 5) return null;
+            task = new Event(description, rawFields.get(3), rawFields.get(4));
+            break;
+        default:
+            return null;
+        }
+
+        if ("1".equals(done)) {
+            task.markAsDone();
+        } else if (!"0".equals(done)) {
+            // invalid done flag → treat as corrupted
+            return null;
+        }
+
+        return task;
+    }
+
+    /**
+     * Escapes literal backslashes and pipes within a field.
+     *
+     * @param s input field
+     * @return escaped field
+     */
+    private static String escape(String s) {
+        return s.replace("\\", "\\\\").replace("|", "\\|");
+    }
+
+    /**
+     * Reverses {@link #escape(String)} on a field.
+     *
+     * @param s escaped field
+     * @return raw field
+     */
+    private static String unescape(String s) {
+        StringBuilder out = new StringBuilder();
+        boolean escaping = false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (escaping) {
+                out.append(c);
+                escaping = false;
+            } else if (c == '\\') {
+                escaping = true;
+            } else {
+                out.append(c);
+            }
+        }
+        if (escaping) {
+            // trailing backslash; treat as literal
+            out.append('\\');
+        }
+        return out.toString();
+    }
+
+    /**
+     * Splits a line by unescaped {@code |}, preserving escaped separators.
+     *
+     * @param line encoded line
+     * @return list of raw fields (still escaped)
+     */
+    private static List<String> splitPreservingEscapes(String line) {
+        List<String> fields = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean escaping = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            if (escaping) {
+                current.append(c);
+                escaping = false;
+                continue;
+            }
+
+            if (c == '\\') {
+                escaping = true;
+                // do not append yet; next character decides
+                continue;
+            }
+
+            if (c == '|') {
+                fields.add(current.toString());
+                current.setLength(0);
+                continue;
+            }
+
+            current.append(c);
+        }
+        fields.add(current.toString());
+        return fields;
+    }
+}
+
+/**
+ * Command keywords recognized by the parser.
  */
 enum Command {
     BYE("bye"),
@@ -243,19 +558,19 @@ enum Command {
     }
 
     /**
-     * Returns user input keyword for command.
+     * Returns the keyword string that triggers this command.
      *
-     * @return user input keyword for command.
+     * @return command keyword
      */
     public String keyword() {
         return keyword;
     }
 
     /**
-     * Resolves input command by first keyword.
+     * Maps the first token of an input line to a {@link Command}.
      *
-     * @param input command input.
-     * @return matching Command or UNKNOWN if none matches.
+     * @param input first token (case-insensitive)
+     * @return matching command or {@link #UNKNOWN}
      */
     public static Command fromInput(String input) {
         String s = input == null ? "" : input.toLowerCase();
@@ -269,7 +584,7 @@ enum Command {
 }
 
 /**
- * Parses input line into command and remainder strings.
+ * Lightweight representation of a parsed command: verb + remainder.
  */
 final class SplitCommand {
     final Command command;
@@ -281,26 +596,26 @@ final class SplitCommand {
     }
 
     /**
-     * Parses a str input line into a Command and its argument string (if any).
+     * Parses a full input line into command and trailing argument string.
      *
-     * @param str full input line.
-     * @return parsed command object.
+     * @param line full user input
+     * @return parsed {@link SplitCommand}
      */
-    public static SplitCommand parse(String str) {
-        String line = str == null ? "" : str.trim();
-        if (line.isEmpty()) {
+    public static SplitCommand parse(String line) {
+        String normalized = line == null ? "" : line.trim();
+        if (normalized.isEmpty()) {
             return new SplitCommand(Command.UNKNOWN, "");
         }
-        String[] parts = line.split("\\s+", 2);
+        String[] parts = normalized.split("\\s+", 2);
         Command cmd = Command.fromInput(parts[0]);
         String rest = parts.length > 1 ? parts[1] : "";
         return new SplitCommand(cmd, rest);
     }
 
     /**
-     * Returns argument str following command input.
+     * Returns the remainder after the command token, or an empty string.
      *
-     * @return the argument string (possibly empty) following the command input.
+     * @return remainder string
      */
     public String argOrEmpty() {
         return remainder;
@@ -308,7 +623,7 @@ final class SplitCommand {
 }
 
 /**
- * Enumerates Task status. Encapsulates status stateIcon rendering.
+ * Display status of a task with a single-character icon.
  */
 enum Status {
     DONE("X"),
@@ -321,9 +636,9 @@ enum Status {
     }
 
     /**
-     * Returns single-character stateIcon used in list rendering.
+     * Returns the one-character state icon used in list rendering.
      *
-     * @return single-character stateIcon used in list rendering.
+     * @return icon string
      */
     public String stateIcon() {
         return stateIcon;
@@ -331,7 +646,7 @@ enum Status {
 }
 
 /**
- * Creates an abstract class for Task.
+ * Common base type for all tasks.
  */
 abstract class Task {
     protected final String description;
@@ -339,10 +654,10 @@ abstract class Task {
     protected final TaskType type;
 
     /**
-     * Constructs Task.
+     * Constructs a task with a type and description. Default status is NOT_DONE.
      *
-     * @param type task type.
-     * @param description description.
+     * @param type        task type tag
+     * @param description human-readable description
      */
     protected Task(TaskType type, String description) {
         this.type = type;
@@ -350,24 +665,20 @@ abstract class Task {
         this.status = Status.NOT_DONE;
     }
 
-    /**
-     * Marks task done.
-     */
+    /** Marks this task as done. */
     public void markAsDone() {
         this.status = Status.DONE;
     }
 
-    /**
-     * Marks task not done.
-     */
+    /** Marks this task as not done. */
     public void markAsUndone() {
         this.status = Status.NOT_DONE;
     }
 
     /**
-     * Returns [task type][status] description, "[T][X] not fail CS2030S".
+     * Renders as {@code [Type][State] Description}, e.g. {@code [T][X] read book}.
      *
-     * @return [task type][status] description, "[T][X] not fail CS2030S".
+     * @return display string
      */
     @Override
     public String toString() {
@@ -376,13 +687,13 @@ abstract class Task {
 }
 
 /**
- * Creates Task type: _Todo.
+ * Task type representing a simple to-do with only a description.
  */
 class Todo extends Task {
     /**
-     * Returns a _Todo with the given description.
+     * Constructs a {@code Todo}.
      *
-     * @param description _Todo description
+     * @param description description text
      */
     public Todo(String description) {
         super(TaskType.TODO, description);
@@ -390,16 +701,16 @@ class Todo extends Task {
 }
 
 /**
- * Creates Task type: Deadline, has due date.
+ * Task type with a deadline date/time.
  */
 class Deadline extends Task {
     protected final String by;
 
     /**
-     * Constructs a Deadline.
+     * Constructs a {@code Deadline}.
      *
-     * @param description task description.
-     * @param by deadline due date.
+     * @param description task description
+     * @param by          deadline label
      */
     public Deadline(String description, String by) {
         super(TaskType.DEADLINE, description);
@@ -407,9 +718,9 @@ class Deadline extends Task {
     }
 
     /**
-     * Returns string of deadline with due date.
+     * Appends {@code (by: ...)} to the base representation.
      *
-     * @return string of deadline with due date.
+     * @return display string
      */
     @Override
     public String toString() {
@@ -418,18 +729,18 @@ class Deadline extends Task {
 }
 
 /**
- * Creates a Task type: Event, has start and end dates.
+ * Task type describing a time-ranged event.
  */
 class Event extends Task {
     protected final String from;
     protected final String to;
 
     /**
-     * Constructs an Task of type Event.
+     * Constructs an {@code Event}.
      *
-     * @param description event description.
-     * @param from start date.
-     * @param to end date.
+     * @param description event description
+     * @param from        start label
+     * @param to          end label
      */
     public Event(String description, String from, String to) {
         super(TaskType.EVENT, description);
@@ -438,9 +749,9 @@ class Event extends Task {
     }
 
     /**
-     * Returns string of event with time range.
+     * Appends {@code (from: ... to: ...)} to the base representation.
      *
-     * @return string of event with time range.
+     * @return display string
      */
     @Override
     public String toString() {
@@ -449,8 +760,7 @@ class Event extends Task {
 }
 
 /**
- * Enumerates Task types supported by Tkit bot.
- * Encapsulates type tag.
+ * Supported task categories. Each value carries a single-letter tag.
  */
 enum TaskType {
     TODO("T"),
@@ -464,9 +774,9 @@ enum TaskType {
     }
 
     /**
-     * Returns a String of the Task tag.
+     * Returns the single-letter tag for this type.
      *
-     * @return list type tag used
+     * @return tag string
      */
     public String tag() {
         return tag;
@@ -474,16 +784,15 @@ enum TaskType {
 }
 
 /**
- * Creates a checked exception for input error.
+ * Checked exception used for input and command errors in Tkit.
  */
 class TkitException extends Exception {
     /**
-     * Throws a TkitException with the displayed error message
+     * Constructs an exception with a message intended for user display.
      *
-     * @param message displayed error message
+     * @param message error text
      */
     public TkitException(String message) {
         super(message);
     }
 }
-
