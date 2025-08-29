@@ -33,8 +33,7 @@ dependencies {
     implementation group: 'org.openjfx', name: 'javafx-graphics', version: javaFxVersion, classifier: 'linux'
 }
 
-test {git
-    useJUnitPlatform()
+test {useJUnitPlatform()
 
     testLogging {
         events "passed", "skipped", "failed"
@@ -53,10 +52,30 @@ application {
 }
 
 shadowJar {
-    archiveBaseName = "tkit"
-    archiveClassifier = null
+
+    archiveBaseName.set('Tkit')
+    archiveVersion.set('')
+    archiveClassifier.set('')
+    manifest {
+        attributes 'Main-Class': 'tkit.Tkit'
+    }
 }
 
 run{
     standardInput = System.in
 }
+
+repositories { mavenCentral() }
+
+application {
+  mainClass = 'tkit.Tkit'
+}
+
+tasks.named('shadowJar') {
+  archiveBaseName.set('Tkit')
+  archiveVersion.set('')
+  archiveClassifier.set('')
+  manifest { attributes 'Main-Class': 'tkit.Tkit' }
+}
+
+test { useJUnitPlatform() }
