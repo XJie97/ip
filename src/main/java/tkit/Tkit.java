@@ -17,7 +17,7 @@ import static tkit.Parser.SplitCommand;
  * # Run
  * java -cp out tkit.Tkit
  */
-public class Tkit {
+public final class Tkit {
     /** Identity banner line. */
     private static final String IDENTITY = "not three kids in a trench coat";
 
