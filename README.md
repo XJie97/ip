@@ -1,4 +1,4 @@
-Usage:
+# Usage:
 # Compile from the project root:
 javac -d out src/main/java/tkit/*.java
 # Run the program
