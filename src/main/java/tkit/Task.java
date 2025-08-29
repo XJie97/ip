@@ -28,6 +28,23 @@ abstract class Task {
         this.status = Status.NOT_DONE;
     }
 
+    /**
+     * Returns true if this task's description contains the given keyword, ignoring case.
+     *
+     * @param keyword non-null search term; leading/trailing spaces are ignored
+     * @return true if the description contains the keyword (case-insensitive), false otherwise
+     */
+    public boolean containsKeyword(String keyword) {
+        if (keyword == null) {
+            return false;
+        }
+        String matchingKeyword = keyword.trim();
+        if (matchingKeyword.isEmpty()) {
+            return false;
+        }
+        return this.description.toLowerCase().contains(matchingKeyword.toLowerCase());
+    }
+
     /** Renders as {@code [Type][State] Description}. */
     @Override
     public String toString() {
