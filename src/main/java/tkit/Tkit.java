@@ -6,8 +6,15 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Entry point and command loop for the Tkit task manager.
- * Level 8: Dates/Times
+ * Primary entry point and command loop for the Tkit task manager.
+ *
+ * Usage:
+ * # Compile from the project root:
+ * javac -d out src/main/java/tkit/*.java
+ * # Run the program
+ * java -cp out tkit.Tkit
+ *
+ * Level 9: Find
  * - Read and parse user commands
  * - Mutate the in-memory task list
  * - Persist changes to disk immediately after each mutation
@@ -236,6 +243,36 @@ public class Tkit {
                         System.out.println("____________________\n");
                         break;
                     }
+
+                    case FIND: {
+                        String keyword = parsed.argOrEmpty().trim();
+                        if (keyword.isEmpty()) {
+                            printError("I do not understand this input format.\n"
+                                    + "Find requires a keyword. "
+                                    + "Use: find <KEYWORD>");
+                            break;
+                        }
+
+                        List<Task> hits = new ArrayList<>();
+                        for (Task t : tasks) {
+                            if (t.containsKeyword(keyword)) {
+                                hits.add(t);
+                            }
+                        }
+
+                        System.out.println("____________________\n");
+                        if (hits.isEmpty()) {
+                            System.out.println("No matching tasks found.");
+                        } else {
+                            System.out.println("Here are the matching tasks in your list:");
+                            for (int i = 0; i < hits.size(); i++) {
+                                System.out.println((i + 1) + ". " + hits.get(i));
+                            }
+                        }
+                        System.out.println("____________________\n");
+                        break;
+                    }
+
 
                     case UNKNOWN:
                     default:
