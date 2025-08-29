@@ -1,3 +1,11 @@
+Usage:
+# Compile from the project root:
+javac -d out src/main/java/tkit/*.java
+# Run the program
+java -cp out tkit.Tkit
+
+
+
 # Duke project template
 
 This is a project template for a greenfield Java project. It's named after the Java mascot _Duke_. Given below are instructions on how to use it.

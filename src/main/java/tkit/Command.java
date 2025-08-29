@@ -11,7 +11,8 @@ enum Command {
     MARK("mark"),
     UNMARK("unmark"),
     DELETE("delete"),
-    ON("on");
+    ON("on"),
+    FIND("find");
 
     private final String keyword;
 
