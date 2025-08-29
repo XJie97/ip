@@ -42,7 +42,7 @@ public class Tkit {
      */
     public static void main(String[] args) {
         // --- startup banner ---
-        System.out.println("____________________ \n\nHello from  " + IDENTITY);
+        System.out.println("____________________ \n\n Hello from  " + IDENTITY);
         System.out.println("What do you mean we are three kids in a trench coat?");
         System.out.println("We are an adult person! \n____________________\n");
 
