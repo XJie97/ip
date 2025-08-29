@@ -1,7 +1,7 @@
 # Usage:
-# Compile from the project root:
+## Compile from the project root:
 javac -d out src/main/java/tkit/*.java
-# Run the program
+## Run the program
 java -cp out tkit.Tkit
 
 
