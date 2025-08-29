@@ -14,7 +14,6 @@ import java.util.List;
 
 /**
  * Encapsulates reading from and writing to an OS-independent relative file path.
- *
  * Format (pipe-delimited with escaping):
  *   TYPE | DONE | DESCRIPTION | OTHER...
  *   T | 1 | read book
@@ -23,7 +22,7 @@ import java.util.List;
  * Escaping rules:
  *   {@code \|} represents a literal pipe within a field
  *   {@code \\} represents a literal backslash
- * Corrupted lines are skipped silently but counted for diagnostics.
+ * Corrupted lines are skipped without aborting, but counted for diagnostics.
  */
 final class Storage {
 
@@ -84,8 +83,9 @@ final class Storage {
 
     /**
      * Persists all tasks to disk using a temp file then an atomic move (with non-atomic fallback).
+     * Preempts file saving issues that might arise due to runtime crashes
      *
-     * @param tasks current snapshot of tasks to persist
+     * @param tasks current snapshot of tasks to save
      */
     public void save(List<Task> tasks) {
         ensureParentDir();
