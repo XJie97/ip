@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Primary entry point and command loop for the Tkit task manager.
+ * Entry point and command loop for the Tkit task manager.
  * Level 8: Dates/Times
  * - Read and parse user commands
  * - Mutate the in-memory task list
