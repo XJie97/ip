@@ -2,7 +2,6 @@ package tkit;
 
 import java.util.Scanner;
 
-import static tkit.Parser.Command;
 import static tkit.Parser.SplitCommand;
 
 /**
