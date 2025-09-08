@@ -1,0 +1,55 @@
+/* Root with background image */
+.app-root {
+    -fx-background-image: url("gemini_darkalleyway.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: cover;
+
+    -fx-font-family: Consolas, "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+/* Ensure all containers are transparent so the image shows through */
+.border-pane { -fx-background-color: transparent; }
+.vbox, .hbox   { -fx-background-color: transparent; }
+
+.scroll-pane { -fx-background-color: transparent; }
+.scroll-pane > .viewport { -fx-background-color: transparent; }
+.scroll-pane > .corner { -fx-background-color: transparent; }
+
+.dialog-container { -fx-background-color: transparent; } /* VBox holding messages */
+
+/* Composer (bottom bar) */
+.composer { -fx-background-color: #111111; }
+
+/* Chat bubbles */
+.bubble-base {
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 14;
+    -fx-background-insets: 0;
+    -fx-wrap-text: true;
+    -fx-text-fill: #000000;            /* force black text */
+}
+.user-bubble { -fx-background-color: #9ad0ff; }   /* light blue */
+.bot-bubble  { -fx-background-color: #ffc76a; }   /* yellow/orange */
+
+/* (Legacy avatar rules; harmless if unused after image avatar swap) */
+.avatar {
+    -fx-min-width: 36; -fx-min-height: 36;
+    -fx-pref-width: 36; -fx-pref-height: 36;
+    -fx-max-width: 36; -fx-max-height: 36;
+    -fx-background-radius: 1000;
+    -fx-background-color: #2b2b2b;
+    -fx-alignment: center;
+}
+.avatar-label { -fx-text-fill: #dcdcdc; -fx-font-weight: bold; }
+
+/* Send button */
+.send-btn {
+    -fx-background-color: #2a72ff;  /* blue */
+    -fx-text-fill: white;
+    -fx-border-color: black;        /* black border */
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
