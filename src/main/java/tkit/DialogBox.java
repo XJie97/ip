@@ -6,10 +6,15 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Circle;
 
 final class DialogBox {
+
+    private DialogBox() { }
 
     private static Region spacer() {
         Region r = new Region();
@@ -30,7 +35,6 @@ final class DialogBox {
 
     /** Round image avatar loaded from resources. */
     private static StackPane avatar() {
-        // load once per call; trivial size. if you want caching, hoist to a static field.
         Image img = new Image(
                 MainApp.class.getResource("/tkit/gemini_tkit.png").toExternalForm(),
                 36, 36, true, true);
@@ -38,7 +42,6 @@ final class DialogBox {
         iv.setFitWidth(36);
         iv.setFitHeight(36);
 
-        // circular clip
         Circle clip = new Circle(18, 18, 18);
         iv.setClip(clip);
 
@@ -66,6 +69,4 @@ final class DialogBox {
         row.setFillHeight(false);
         return row;
     }
-
-    private DialogBox() {}
 }

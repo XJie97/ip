@@ -9,6 +9,8 @@ package tkit;
  */
 final class Parser {
 
+    private Parser() { }
+
     /**
      * Lightweight representation of a parsed command line.
      * Consists of a {@link Command} and the raw remainder string.
@@ -47,6 +49,4 @@ final class Parser {
         String rest = parts.length > 1 ? parts[1] : "";
         return new SplitCommand(cmd, rest);
     }
-
-    private Parser() {}
 }

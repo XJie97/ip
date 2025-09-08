@@ -2,7 +2,7 @@ package tkit;
 
 import java.util.Scanner;
 
-import static tkit.Parser.SplitCommand;
+import tkit.Parser.SplitCommand;
 
 /**
  * Primary entry point and command loop for the Tkit task manager.
@@ -194,7 +194,6 @@ public final class Tkit {
                 } catch (TkitException e) {
                     ui.error(e.getMessage());
                 } catch (Exception e) {
-                    // Final safety net: do not terminate; report and continue.
                     ui.error("Error: " + e.getMessage());
                 }
             }
