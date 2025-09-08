@@ -47,7 +47,7 @@ test {useJUnitPlatform()
 }
 
 application {
-    mainClass = 'tkit.Tkit'
+    mainClass = 'tkit.Launcher'
     //mainClass.set("seedu.duke.Duke")
 }
 
@@ -68,14 +68,14 @@ run{
 repositories { mavenCentral() }
 
 application {
-  mainClass = 'tkit.Tkit'
+    mainClass = 'tkit.Launcher'
 }
 
 tasks.named('shadowJar') {
   archiveBaseName.set('Tkit')
   archiveVersion.set('')
   archiveClassifier.set('')
-  manifest { attributes 'Main-Class': 'tkit.Tkit' }
+  manifest { attributes 'Main-Class': 'tkit.Launcher' }
 }
 
 test { useJUnitPlatform() }

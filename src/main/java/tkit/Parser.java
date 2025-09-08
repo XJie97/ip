@@ -17,74 +17,13 @@ final class Parser {
         final Command command;
         final String remainder;
 
-        /**
-         * Constructs a parsed command.
-         *
-         * @param command parsed command keyword
-         * @param remainder remainder of the line (never {@code null})
-         */
         SplitCommand(Command command, String remainder) {
             this.command = command;
             this.remainder = remainder == null ? "" : remainder;
         }
 
-        /**
-         * Returns the remainder string or the empty string if none.
-         *
-         * @return non-null remainder
-         */
         String argOrEmpty() {
             return remainder;
-        }
-    }
-
-    /**
-     * Command keywords recognized by the parser.
-     * Each enum constant carries the canonical triggering keyword.
-     */
-    enum Command {
-        BYE("bye"),
-        UNKNOWN(""),
-        LIST("list"),
-        TODO("todo"),
-        DEADLINE("deadline"),
-        EVENT("event"),
-        MARK("mark"),
-        UNMARK("unmark"),
-        DELETE("delete"),
-        ON("on"),
-        FIND("find");
-
-        private final String keyword;
-
-        Command(String keyword) {
-            this.keyword = keyword;
-        }
-
-        /**
-         * Returns the canonical keyword string for the command.
-         *
-         * @return keyword used to trigger this command
-         */
-        String keyword() {
-            return keyword;
-        }
-
-        /**
-         * Maps a token to a {@link Command}, case-insensitively.
-         * Returns {@link #UNKNOWN} if no match is found.
-         *
-         * @param input token to interpret
-         * @return matching command or {@link #UNKNOWN}
-         */
-        static Command fromInput(String input) {
-            String s = input == null ? "" : input.toLowerCase();
-            for (Command c : values()) {
-                if (!c.keyword.isEmpty() && c.keyword.equals(s)) {
-                    return c;
-                }
-            }
-            return UNKNOWN;
         }
     }
 
@@ -109,7 +48,5 @@ final class Parser {
         return new SplitCommand(cmd, rest);
     }
 
-    /** Non-instantiable utility class. */
-    private Parser() {
-    }
+    private Parser() {}
 }
