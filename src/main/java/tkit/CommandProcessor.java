@@ -109,7 +109,8 @@ final class CommandProcessor {
                 String raw = parsed.argOrEmpty().trim();
                 LocalDate target = DateTimeUtil.tryParseToLocalDate(raw);
                 if (target == null) {
-                    return err("Unrecognized date.\nUse: on <DATE or DATE TIME>\nExamples: on 2019-12-02 | on 2/12/2019");
+                    return err("Unrecognized date.\nUse: on <DATE or DATE TIME>\n"
+                            + "Examples: on 2019-12-02 | on 2/12/2019");
                 }
                 List<Task> hits = tasks.onDate(target);
                 if (hits.isEmpty()) {
@@ -142,7 +143,8 @@ final class CommandProcessor {
             case UNKNOWN:
             default:
                 return err("Unknown command: \"" + line + "\".\n"
-                        + "Try: list, todo, deadline, event, mark N, unmark N, delete N, on <DATE>, find <KEYWORD>, bye.");
+                        + "Try: list, todo, deadline, event, mark N, unmark N, delete N,"
+                        + " on <DATE>, find <KEYWORD>, bye.");
             }
         } catch (TkitException e) {
             return err(e.getMessage());

@@ -20,7 +20,6 @@ import java.time.temporal.ChronoField;
  * Display format is "MMM d yyyy" or "MMM d yyyy HH:mm" if time is non-midnight.
  */
 final class DateTimeUtil {
-    private DateTimeUtil() {}
 
     // Accept ISO yyyy-MM-dd[ HHmm] OR d/M/yyyy[ HHmm]
     private static final DateTimeFormatter INPUT_FMT = new DateTimeFormatterBuilder()
@@ -48,8 +47,13 @@ final class DateTimeUtil {
                     .toFormatter())
             .toFormatter();
 
-    private static final DateTimeFormatter OUT_DATE = DateTimeFormatter.ofPattern("MMM d yyyy");
-    private static final DateTimeFormatter OUT_DATE_TIME = DateTimeFormatter.ofPattern("MMM d yyyy HH:mm");
+    private static final DateTimeFormatter OUT_DATE =
+            DateTimeFormatter.ofPattern("MMM d yyyy");
+
+    private static final DateTimeFormatter OUT_DATE_TIME =
+            DateTimeFormatter.ofPattern("MMM d yyyy HH:mm");
+
+    private DateTimeUtil() { }
 
     /**
      * Strict parse; throws on failure.
@@ -108,6 +112,11 @@ final class DateTimeUtil {
             return ldt.format(OUT_DATE);
         }
         return ldt.format(OUT_DATE_TIME);
+    }
+
+    /** Pretty-print for a LocalDate using the same OUT_DATE pattern. */
+    public static String pretty(LocalDate date) {
+        return date.format(OUT_DATE);
     }
 
     /**
@@ -176,11 +185,6 @@ final class DateTimeUtil {
         }
     }
 
-    /** Pretty-print for a LocalDate using the same OUT_DATE pattern. */
-    public static String pretty(LocalDate date) {
-        return date.format(OUT_DATE);
-    }
-
     /**
      * True if the given calendar date intersects [start, end] by date (inclusive).
      * If start > end, the method swaps them.
@@ -192,7 +196,7 @@ final class DateTimeUtil {
      */
     public static boolean dateIntersects(LocalDate date, LocalDateTime start, LocalDateTime end) {
         if (start.isAfter(end)) {
-            var tmp = start;
+            LocalDateTime tmp = start;
             start = end;
             end = tmp;
         }

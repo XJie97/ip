@@ -1,8 +1,7 @@
 package tkit;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class TodoTest {
 
@@ -10,17 +9,16 @@ class TodoTest {
     void toString_showsTypeAndDescription() {
         Todo todo = new Todo("go sleep");
         String rendered = todo.toString();
-        assertTrue(rendered.contains("go sleep"));
-        assertTrue(rendered.startsWith("[T][ ]"));
+        Assertions.assertTrue(rendered.contains("go sleep"));
+        Assertions.assertTrue(rendered.startsWith("[T][ ]"));
     }
 
     @Test
     void markAndUnmark_changesStatusIcon() {
         Todo todo = new Todo("PLEASE SLEEP");
         todo.markAsDone();
-        assertTrue(todo.toString().contains("[X]"));
+        Assertions.assertTrue(todo.toString().contains("[X]"));
         todo.markAsUndone();
-        assertTrue(todo.toString().contains("[ ]"));
+        Assertions.assertTrue(todo.toString().contains("[ ]"));
     }
 }
-

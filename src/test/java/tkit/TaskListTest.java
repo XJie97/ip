@@ -1,10 +1,9 @@
 package tkit;
 
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class TaskListTest {
 
@@ -13,7 +12,7 @@ class TaskListTest {
         TaskList list = new TaskList();
         Todo t = new Todo("restore sanity");
         list.add(t);
-        assertEquals(t, list.get(0));
+        Assertions.assertEquals(t, list.get(0));
     }
 
     @Test
@@ -23,8 +22,8 @@ class TaskListTest {
         list.add(new Todo("mental breakdown"));
 
         List<Task> hits = list.find("cry");
-        assertEquals(1, hits.size());
-        assertEquals("Cry hard", ((Todo) hits.get(0)).toString().substring(7));
+        Assertions.assertEquals(1, hits.size());
+        Assertions.assertEquals("Cry hard", ((Todo) hits.get(0)).toString().substring(7));
     }
 
     @Test
@@ -33,7 +32,7 @@ class TaskListTest {
         Todo t = new Todo("a");
         list.add(t);
         Task removed = list.removeAt(0);
-        assertEquals(t, removed);
-        assertTrue(list.isEmpty());
+        Assertions.assertEquals(t, removed);
+        Assertions.assertTrue(list.isEmpty());
     }
 }

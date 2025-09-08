@@ -26,11 +26,11 @@ import java.util.List;
  */
 final class Storage {
 
-    /** Relative, OS-independent data file path. */
-    private final Path dataFile = Path.of("data", "Tkit.txt");
-
     /** Line prefix used for user-readable comments in temp writes. */
     private static final String HEADER_PREFIX = "#";
+
+    /** Relative, OS-independent data file path. */
+    private final Path dataFile = Path.of("data", "Tkit.txt");
 
     /**
      * Loads tasks from disk. Creates parent directory if missing; ignores corrupted lines.
@@ -52,7 +52,6 @@ final class Storage {
             while ((line = reader.readLine()) != null) {
                 String trimmed = line.trim();
                 if (trimmed.isEmpty() || trimmed.startsWith(HEADER_PREFIX)) {
-                    // skip blank lines and comments
                     continue;
                 }
                 try {
@@ -136,6 +135,7 @@ final class Storage {
                 Files.createDirectories(parent);
             }
         } catch (IOException ignored) {
+            // intentional no-op: directory creation is best-effort and failure is non-fatal
         }
     }
 
