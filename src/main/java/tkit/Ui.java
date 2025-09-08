@@ -18,7 +18,7 @@ final class Ui {
      * @param identity application identity string to display
      */
     void banner(String identity) {
-        System.out.println("____________________ \n\n Hello from  " + identity);
+        System.out.println("____________________ \n\nHello from  " + identity);
         System.out.println("What do you mean we are three kids in a trench coat?");
         System.out.println("We are an adult person! \n____________________\n");
     }
