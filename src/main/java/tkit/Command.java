@@ -17,6 +17,7 @@ enum Command {
     private final String keyword;
 
     Command(String keyword) {
+        assert keyword != null : "Command keyword must not be null";
         this.keyword = keyword;
     }
 
@@ -33,6 +34,7 @@ enum Command {
      */
     public static Command fromInput(String input) {
         String s = input == null ? "" : input.toLowerCase();
+        assert s.equals(s.toLowerCase()) : "Lowercasing should be idempotent";
         for (Command c : values()) {
             if (!c.keyword.isEmpty() && c.keyword.equals(s)) {
                 return c;

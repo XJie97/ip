@@ -36,13 +36,16 @@ public final class Tkit {
         ui.banner(IDENTITY);
 
         TaskList tasks = new TaskList(storage.load());
+        assert tasks != null : "TaskList must be constructed";
 
         try (Scanner input = new Scanner(System.in)) {
             while (true) {
                 String rawLine = input.nextLine().trim();
+                assert rawLine != null : "Scanner returned null line";
 
                 try {
                     SplitCommand parsed = Parser.parse(rawLine);
+                    assert parsed != null;
 
                     switch (parsed.command) {
                     case BYE: {
@@ -209,7 +212,9 @@ public final class Tkit {
      * @throws TkitException if parsing fails or the index is out of range
      */
     private static int parseIndex(String userSuppliedIndex, int currentSize) throws TkitException {
+        assert currentSize >= 0;
         String trimmed = userSuppliedIndex.trim();
+        assert !trimmed.isEmpty();
         try {
             int oneBased = Integer.parseInt(trimmed);
             int zeroBased = oneBased - 1;

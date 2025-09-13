@@ -14,6 +14,9 @@ class Deadline extends Task {
      */
     public Deadline(String description, LocalDateTime dueAt) {
         super(TaskType.DEADLINE, description);
+
+        assert dueAt != null : "Event endpoints must not be null";
+
         this.dueAt = dueAt;
     }
 
@@ -24,6 +27,7 @@ class Deadline extends Task {
 
     @Override
     public String toString() {
+        assert dueAt != null : "Deadline must have dueAt";
         return super.toString() + " (by: " + DateTimeUtil.pretty(dueAt) + ")";
     }
 }

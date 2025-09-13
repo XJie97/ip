@@ -9,17 +9,21 @@ final class CommandProcessor {
     private final TaskList tasks;
 
     CommandProcessor() {
-        this.tasks = new TaskList(storage.load());
+        List<Task> loaded = storage.load();
+        assert loaded != null : "Storage.load() must return non-null list";
+        this.tasks = new TaskList(loaded);
     }
 
     boolean isExit(String rawLine) {
         Parser.SplitCommand parsed = Parser.parse(rawLine);
+        assert parsed != null;
         return parsed.command == Command.BYE;
     }
 
     String handle(String rawLine) {
         String line = rawLine == null ? "" : rawLine.trim();
         Parser.SplitCommand parsed = Parser.parse(line);
+        assert parsed != null : "Parser must not return null";
 
         try {
             switch (parsed.command) {
@@ -82,6 +86,7 @@ final class CommandProcessor {
 
             case MARK: {
                 int idx = parseIndex(parsed.argOrEmpty(), tasks.size());
+                assert idx >= 0 && idx < tasks.size();
                 tasks.mark(idx);
                 storage.save(tasks.view());
                 return block("Marked as done:\n  " + tasks.get(idx));
@@ -154,7 +159,9 @@ final class CommandProcessor {
     }
 
     private static int parseIndex(String userSuppliedIndex, int currentSize) throws TkitException {
+        assert currentSize >= 0 : "currentSize must be non-negative";
         String trimmed = userSuppliedIndex.trim();
+        assert !trimmed.isEmpty() : "index string pre-validated to be non-empty";
         try {
             int oneBased = Integer.parseInt(trimmed);
             int zeroBased = oneBased - 1;
@@ -168,6 +175,7 @@ final class CommandProcessor {
     }
 
     private static String renderList(List<Task> tasks) {
+        assert tasks != null : "renderList(): tasks must not be null";
         StringBuilder sb = new StringBuilder();
         if (tasks.isEmpty()) {
             sb.append("There are no entries yet.");

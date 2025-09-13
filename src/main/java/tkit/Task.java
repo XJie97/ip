@@ -13,6 +13,8 @@ abstract class Task {
      * @param description user-visible text
      */
     protected Task(TaskType type, String description) {
+        assert type != null : "Task type must not be null";
+        assert description != null && !description.isBlank() : "Task description must not be blank";
         this.type = type;
         this.description = description;
         this.status = Status.NOT_DONE;
@@ -20,11 +22,13 @@ abstract class Task {
 
     /** Marks this task as done. */
     public void markAsDone() {
+        assert this.status != null : "Status must be initialized";
         this.status = Status.DONE;
     }
 
     /** Marks this task as not done. */
     public void markAsUndone() {
+        assert this.status != null : "Status must be initialized";
         this.status = Status.NOT_DONE;
     }
 
@@ -48,6 +52,7 @@ abstract class Task {
     /** Renders as {@code [Type][State] Description}. */
     @Override
     public String toString() {
+        assert type != null && status != null && description != null;
         return "[" + type.tag() + "][" + status.stateIcon() + "] " + description;
     }
 }
