@@ -18,7 +18,6 @@ class Event extends Task {
         super(TaskType.EVENT, description);
         assert fromDate != null && toDate != null : "Event endpoints must not be null";
         assert !toDate.isBefore(fromDate) : "Event end must be >= start";
-      
         this.fromDate = fromDate;
         this.toDate = toDate;
     }
