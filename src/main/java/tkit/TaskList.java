@@ -136,12 +136,12 @@ final class TaskList {
         List<Task> hits = new ArrayList<>();
         for (Task t : tasks) {
             if (t instanceof Deadline) {
-                if (((Deadline) t).getDueAt().toLocalDate().equals(date)) {
+                if (((Deadline) t).getDueDate().toLocalDate().equals(date)) {
                     hits.add(t);
                 }
             } else if (t instanceof Event) {
-                LocalDateTime from = ((Event) t).getFrom();
-                LocalDateTime to = ((Event) t).getTo();
+                LocalDateTime from = ((Event) t).getFromDate();
+                LocalDateTime to = ((Event) t).getToDate();
                 if (DateTimeUtil.dateIntersects(date, from, to)) {
                     hits.add(t);
                 }

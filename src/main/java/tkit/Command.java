@@ -31,7 +31,7 @@ enum Command {
      * @param input token (case-insensitive)
      * @return matching command or {@code UNKNOWN}
      */
-    public static Command fromInput(String input) {
+    public static Command getCommandFromInput(String input) {
         String s = input == null ? "" : input.toLowerCase();
         for (Command c : values()) {
             if (!c.keyword.isEmpty() && c.keyword.equals(s)) {

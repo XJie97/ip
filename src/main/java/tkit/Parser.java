@@ -34,7 +34,7 @@ final class Parser {
      * Behavior:
      *   Trims surrounding whitespace
      *   Splits on the first whitespace run into "command token" and "rest"
-     *   Classifies the token using {@link Command#fromInput(String)}
+     *   Classifies the token using {@link Command#getCommandFromInput(String)}
      *
      * @param line full input line
      * @return parsed command and remainder; never {@code null}
@@ -45,7 +45,7 @@ final class Parser {
             return new SplitCommand(Command.UNKNOWN, "");
         }
         String[] parts = normalized.split("\\s+", 2);
-        Command cmd = Command.fromInput(parts[0]);
+        Command cmd = Command.getCommandFromInput(parts[0]);
         String rest = parts.length > 1 ? parts[1] : "";
         return new SplitCommand(cmd, rest);
     }

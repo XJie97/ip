@@ -4,26 +4,26 @@ import java.time.LocalDateTime;
 
 /** Task type with a deadline date/time. */
 class Deadline extends Task {
-    private final LocalDateTime dueAt;
+    private final LocalDateTime dueDate;
 
     /**
      * Creates a deadline task.
      *
      * @param description user-visible text
-     * @param dueAt due date/time
+     * @param dueDate due date/time
      */
-    public Deadline(String description, LocalDateTime dueAt) {
+    public Deadline(String description, LocalDateTime dueDate) {
         super(TaskType.DEADLINE, description);
-        this.dueAt = dueAt;
+        this.dueDate = dueDate;
     }
 
     /** Returns the due date/time. */
-    public LocalDateTime getDueAt() {
-        return dueAt;
+    public LocalDateTime getDueDate() {
+        return dueDate;
     }
 
     @Override
     public String toString() {
-        return super.toString() + " (by: " + DateTimeUtil.pretty(dueAt) + ")";
+        return super.toString() + " (by: " + DateTimeUtil.pretty(dueDate) + ")";
     }
 }

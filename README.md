@@ -1,9 +1,6 @@
 # Usage:
-## Compile from the project root:
-javac -d out src/main/java/tkit/*.java
-## Run the program
-java -cp out tkit.Tkit
-
+## Run the program (from project root directory)
+./gradlew run 
 
 
 # Duke project template
