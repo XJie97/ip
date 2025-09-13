@@ -86,7 +86,10 @@ final class Storage {
      *
      * @param tasks the current snapshot of tasks to save; must not be {@code null}
      */
+
     public void save(final List<Task> tasks) {
+        assert tasks != null : "save(): tasks must not be null";
+
         ensureParentDir();
         final Path tmp = dataFile.resolveSibling(dataFile.getFileName() + ".tmp");
 
@@ -154,8 +157,10 @@ final class Storage {
 
     /** Ensures parent directory exists; creates it if missing. */
     private void ensureParentDir() {
+
         try {
             Path parent = dataFile.getParent();
+            assert parent != null : "Data file must have a parent directory";
             if (parent != null && !Files.exists(parent)) {
                 Files.createDirectories(parent);
             }
@@ -166,6 +171,10 @@ final class Storage {
 
     /** Serializes a task into a single line. */
     private String encodeTask(Task t) {
+        assert t != null : "encodeTask(): task is null";
+        assert t.type != null && t.status != null
+                && t.description != null : "encodeTask(): fields must be non-null";
+
         String doneFlag = (t.status == Status.DONE) ? "1" : "0";
         String type = t.type.tag();
 
@@ -198,6 +207,7 @@ final class Storage {
      * @return constructed task or {@code null} if corrupted
      */
     private Task decodeLine(String line) {
+        assert line != null && !line.isBlank() : "decodeLine(): empty line";
         List<String> rawFields = splitPreservingEscapes(line);
         if (rawFields.size() < 3) {
             return null;
@@ -253,11 +263,13 @@ final class Storage {
 
     /** Escapes literal backslashes and pipes within a field. */
     private static String escape(String s) {
+        assert s != null : "escape(): null";
         return s.replace("\\", "\\\\").replace("|", "\\|");
     }
 
     /** Reverses {@link #escape(String)} on a field. */
     private static String unescape(String s) {
+        assert s != null : "unescape(): null";
         StringBuilder out = new StringBuilder();
         boolean isEscaping = false;
         for (int i = 0; i < s.length(); i++) {
@@ -279,6 +291,7 @@ final class Storage {
 
     /** Splits a line by unescaped {@code |}, preserving escaped separators. */
     private static List<String> splitPreservingEscapes(String line) {
+        assert line != null : "splitPreservingEscapes(): null";
         List<String> fields = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         boolean isEscaping = false;

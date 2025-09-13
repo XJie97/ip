@@ -36,6 +36,7 @@ final class Ui {
      * @param tasks ordered view of all tasks
      */
     void list(List<Task> tasks) {
+        assert tasks != null;
         System.out.println("____________________\n");
         if (tasks.isEmpty()) {
             System.out.println("There are no entries yet.");
@@ -55,6 +56,7 @@ final class Ui {
      * @param totalCount new total number of tasks
      */
     void added(Task t, int totalCount) {
+        assert t != null && totalCount >= 0;
         System.out.println("____________________\n");
         System.out.println("Got it. I've added this task:");
         System.out.println("  " + t);
@@ -68,6 +70,7 @@ final class Ui {
      * @param t the task that was marked
      */
     void marked(Task t) {
+        assert t != null;
         System.out.println("____________________\n");
         System.out.println("Nice! I've marked this task as done:");
         System.out.println("  " + t);
@@ -80,6 +83,7 @@ final class Ui {
      * @param t the task that was unmarked
      */
     void unmarked(Task t) {
+        assert t != null;
         System.out.println("____________________\n");
         System.out.println("OK, I've marked this task as not done yet:");
         System.out.println("  " + t);
@@ -93,6 +97,7 @@ final class Ui {
      * @param newSize the new size of the task list
      */
     void removed(Task t, int newSize) {
+        assert t != null && newSize >= 0;
         System.out.println("____________________\n");
         System.out.println("Noted. I've removed this task:");
         System.out.println("  " + t);
@@ -106,6 +111,7 @@ final class Ui {
      * @param hits ordered list of tasks that matched
      */
     void matches(List<Task> hits) {
+        assert hits != null;
         System.out.println("____________________\n");
         if (hits.isEmpty()) {
             System.out.println("No matching tasks found.");
@@ -125,6 +131,7 @@ final class Ui {
      * @param hits ordered list of tasks that occur on the date
      */
     void onDate(LocalDate date, List<Task> hits) {
+        assert date != null && hits != null;
         System.out.println("____________________\n");
         if (hits.isEmpty()) {
             System.out.println("No deadlines/events on " + DateTimeUtil.pretty(date) + ".");
@@ -143,6 +150,7 @@ final class Ui {
      * @param msg error message to display
      */
     void error(String msg) {
+        assert msg != null;
         System.out.println("____________________\n");
         System.out.println(msg);
         System.out.println("____________________\n");

@@ -63,6 +63,7 @@ final class DateTimeUtil {
      * @throws IllegalArgumentException if parsing fails
      */
     public static LocalDateTime parseToLdt(String raw) {
+        assert raw != null && !raw.isBlank() : "parseToLdt(): raw must be non-blank";
         String s = raw.trim();
         try {
             return LocalDateTime.parse(s, INPUT_FMT);
@@ -109,6 +110,7 @@ final class DateTimeUtil {
      * @return formatted string
      */
     public static String pretty(LocalDateTime ldt) {
+        assert ldt != null : "pretty(ldt): null";
         if (ldt.toLocalTime().equals(LocalTime.MIDNIGHT)) {
             return ldt.format(OUT_DATE);
         }
@@ -117,6 +119,7 @@ final class DateTimeUtil {
 
     /** Prints (Pretty-print) LocalDate using OUT_DATE pattern. */
     public static String pretty(LocalDate date) {
+        assert date != null : "pretty(date): null";
         return date.format(OUT_DATE);
     }
 

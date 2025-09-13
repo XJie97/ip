@@ -20,6 +20,7 @@ final class Parser {
         final String remainder;
 
         SplitCommand(Command command, String remainder) {
+            assert command != null : "Command must not be null";
             this.command = command;
             this.remainder = remainder == null ? "" : remainder;
         }
@@ -45,8 +46,13 @@ final class Parser {
             return new SplitCommand(Command.UNKNOWN, "");
         }
         String[] parts = normalized.split("\\s+", 2);
+
+        assert parts.length >= 1 : "Split must yield at least a command token";
         Command cmd = Command.getCommandFromInput(parts[0]);
+
         String rest = parts.length > 1 ? parts[1] : "";
+        assert rest != null : "Remainder must not be null";
+
         return new SplitCommand(cmd, rest);
     }
 }

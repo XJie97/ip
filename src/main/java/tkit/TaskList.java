@@ -19,6 +19,7 @@ final class TaskList {
     /** Creates an empty task list. */
     TaskList() {
         this.tasks = new ArrayList<>();
+        assert this.tasks.isEmpty();
     }
 
     /**
@@ -29,6 +30,7 @@ final class TaskList {
      */
     TaskList(List<Task> initial) {
         this.tasks = new ArrayList<>(initial == null ? List.of() : initial);
+        assert this.tasks != null;
     }
 
     /**
@@ -57,6 +59,7 @@ final class TaskList {
      * @throws IndexOutOfBoundsException if {@code idx} is invalid
      */
     Task get(int idx) {
+        assert idx >= 0 && idx < tasks.size() : "get(): index out of bounds";
         return tasks.get(idx);
     }
 
@@ -75,7 +78,10 @@ final class TaskList {
      * @param t task to add
      */
     void add(Task t) {
+        assert t != null : "add(): task must not be null";
+        int before = tasks.size();
         tasks.add(t);
+        assert tasks.size() == before + 1 : "add(): size must increase by 1";
     }
 
     /**
@@ -86,6 +92,7 @@ final class TaskList {
      * @throws IndexOutOfBoundsException if {@code idx} is invalid
      */
     Task removeAt(int idx) {
+        assert idx >= 0 && idx < tasks.size() : "removeAt(): index out of bounds";
         return tasks.remove(idx);
     }
 
@@ -95,6 +102,7 @@ final class TaskList {
      * @param idx zero-based index
      */
     void mark(int idx) {
+        assert idx >= 0 && idx < tasks.size() : "mark(): index out of bounds";
         tasks.get(idx).markAsDone();
     }
 
@@ -104,6 +112,7 @@ final class TaskList {
      * @param idx zero-based index
      */
     void unmark(int idx) {
+        assert idx >= 0 && idx < tasks.size() : "unmark(): index out of bounds";
         tasks.get(idx).markAsUndone();
     }
 
@@ -116,10 +125,12 @@ final class TaskList {
     List<Task> find(String keyword) {
         List<Task> hits = new ArrayList<>();
         for (Task t : tasks) {
+            assert t != null : "List must not contain null tasks";
             if (t.containsKeyword(keyword)) {
                 hits.add(t);
             }
         }
+        assert hits.size() <= tasks.size();
         return hits;
     }
 
