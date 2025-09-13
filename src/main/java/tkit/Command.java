@@ -32,7 +32,7 @@ enum Command {
      * @param input token (case-insensitive)
      * @return matching command or {@code UNKNOWN}
      */
-    public static Command fromInput(String input) {
+    public static Command getCommandFromInput(String input) {
         String s = input == null ? "" : input.toLowerCase();
         assert s.equals(s.toLowerCase()) : "Lowercasing should be idempotent";
         for (Command c : values()) {

@@ -4,45 +4,45 @@ import java.time.LocalDateTime;
 
 /** Task type describing a time-ranged event. */
 class Event extends Task {
-    private final LocalDateTime from;
-    private final LocalDateTime to;
+    private final LocalDateTime fromDate;
+    private final LocalDateTime toDate;
 
     /**
      * Creates an event task.
      *
      * @param description user-visible text
-     * @param from start date/time
-     * @param to end date/time
+     * @param fromDate start date/time
+     * @param toDate end date/time
      */
-    public Event(String description, LocalDateTime from, LocalDateTime to) {
+    public Event(String description, LocalDateTime fromDate, LocalDateTime toDate) {
         super(TaskType.EVENT, description);
-
-        assert from != null && to != null : "Event endpoints must not be null";
-        assert !to.isBefore(from) : "Event end must be >= start";
-
-        this.from = from;
-        this.to = to;
+        assert fromDate != null && toDate != null : "Event endpoints must not be null";
+        assert !toDate.isBefore(fromDate) : "Event end must be >= start";
+      
+        this.fromDate = fromDate;
+        this.toDate = toDate;
     }
 
     /** Returns the start date/time. */
-    public LocalDateTime getFrom() {
-        assert from != null;
-        return from;
+    public LocalDateTime getFromDate() {
+        assert fromDate != null;
+        return fromDate;
     }
 
     /** Returns the end date/time. */
-    public LocalDateTime getTo() {
-        assert to != null;
-        return to;
+    public LocalDateTime getToDate() {
+        assert toDate != null;
+        return toDate;
+
     }
 
     @Override
     public String toString() {
         return super.toString()
-                + " (from: "
-                + DateTimeUtil.pretty(from)
-                + " to: "
-                + DateTimeUtil.pretty(to)
+                + " (fromDate: "
+                + DateTimeUtil.pretty(fromDate)
+                + " toDate: "
+                + DateTimeUtil.pretty(toDate)
                 + ")";
     }
 }

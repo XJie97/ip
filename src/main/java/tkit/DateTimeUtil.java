@@ -56,7 +56,7 @@ final class DateTimeUtil {
     private DateTimeUtil() { }
 
     /**
-     * Strict parse; throws on failure.
+     * Parses input string; throws on failure.
      *
      * @param raw input text
      * @return parsed LocalDateTime
@@ -82,7 +82,7 @@ final class DateTimeUtil {
     }
 
     /**
-     * Non-throwing parse; returns null on failure.
+     * Parses input string, returns null on failure.
      *
      * @param raw input text
      * @return LocalDateTime or null
@@ -103,7 +103,8 @@ final class DateTimeUtil {
     }
 
     /**
-     * Pretty-print: omit time if midnight, else include HH:mm.
+     * Prints (pretty-prints) input date-time:
+     * Omits time if midnight, else includes HH:mm.
      *
      * @param ldt date-time
      * @return formatted string
@@ -116,14 +117,14 @@ final class DateTimeUtil {
         return ldt.format(OUT_DATE_TIME);
     }
 
-    /** Pretty-print for a LocalDate using the same OUT_DATE pattern. */
+    /** Prints (Pretty-print) LocalDate using OUT_DATE pattern. */
     public static String pretty(LocalDate date) {
         assert date != null : "pretty(date): null";
         return date.format(OUT_DATE);
     }
 
     /**
-     * Lossless storage format (ISO-8601).
+     * Stores as lossless storage format (ISO-8601).
      *
      * @param ldt date-time
      * @return ISO-8601 string
@@ -133,7 +134,8 @@ final class DateTimeUtil {
     }
 
     /**
-     * Strict storage parse with fallback to input; throws on failure.
+     * Parses storage text with fallback to input;
+     * Throws on failure.
      *
      * @param text text to parse
      * @return LocalDateTime
@@ -149,7 +151,8 @@ final class DateTimeUtil {
     }
 
     /**
-     * Non-throwing storage parse with fallback to input; returns null on failure.
+     * Parses storage text with fallback to input;
+     * Returns null on failure.
      *
      * @param text text to parse
      * @return LocalDateTime or null
@@ -165,7 +168,8 @@ final class DateTimeUtil {
     }
 
     /**
-     * Non-throwing parse to LocalDate; returns null on failure.
+     * Parses input string to LocalDate;
+     * Returns null on failure.
      *
      * @param raw input text
      * @return LocalDate or null
@@ -189,8 +193,9 @@ final class DateTimeUtil {
     }
 
     /**
-     * True if the given calendar date intersects [start, end] by date (inclusive).
-     * If start > end, the method swaps them.
+     * Returns True if the given calendar date intersects
+     * [start, end] by date (inclusive).
+     * Swaps start with end if start > end.
      *
      * @param date date to test
      * @param start start date-time (inclusive)
