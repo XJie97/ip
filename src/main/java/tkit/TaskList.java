@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+
 /**
  * Mutable container for {@link Task} objects that provides domain operations.
  * Responsibilities:
@@ -160,4 +161,30 @@ final class TaskList {
         }
         return hits;
     }
+
+    /**
+     * Removes tasks at the given zero-based indices. Indices must be unique and sorted in
+     * strictly descending order to avoid reindexing issues. The method assumes indices
+     * have already been range-checked by the caller.
+     *
+     * @param zeroBasedDescending unique indices in strictly descending order
+     * @return tasks removed, in the same order as indices provided
+     */
+    List<Task> removeManyDescending(List<Integer> zeroBasedDescending) {
+        assert zeroBasedDescending != null : "removeManyDescending(): indices null";
+        // Defensive checks in assertions for development; callers should pre-validate.
+        int last = Integer.MAX_VALUE;
+        for (Integer idx : zeroBasedDescending) {
+            assert idx != null : "removeManyDescending(): null index";
+            assert idx >= 0 && idx < tasks.size() : "removeManyDescending(): index out of bounds";
+            assert idx < last : "removeManyDescending(): indices must be strictly descending";
+            last = idx;
+        }
+        List<Task> removed = new ArrayList<>();
+        for (int idx : zeroBasedDescending) {
+            removed.add(tasks.remove(idx));
+        }
+        return removed;
+    }
+
 }

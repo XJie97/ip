@@ -2,6 +2,8 @@ package tkit;
 
 import java.util.Scanner;
 
+import java.util.List;
+
 import tkit.Parser.SplitCommand;
 
 /**
@@ -63,7 +65,7 @@ public final class Tkit {
                         if (description.isEmpty()) {
                             ui.error("I do not understand this input format\n"
                                     + "Todo requires a description."
-                                    + "Please try Format: todo <DESCRIPTION>");
+                                    + "Please try: todo <DESCRIPTION>");
                             break;
                         }
                         Task task = new Todo(description);
@@ -79,7 +81,7 @@ public final class Tkit {
                         if (parts.length < 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
                             ui.error("I do not understand this input format\n"
                                     + "Wrong deadline input format.\n"
-                                    + "Please try format: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
+                                    + "Please try: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
                                     + "Examples: 2019-12-02 1800  |  2019-12-02  |  2/12/2019 1800");
                             break;
                         }
@@ -87,7 +89,7 @@ public final class Tkit {
                         if (by == null) {
                             ui.error("I do not recognize this date/time format: \""
                                     + parts[1].trim()
-                                    + "\"\nPlease try format: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
+                                    + "\"\nPlease try: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
                                     + "Examples: 2019-12-02 1800  |  2019-12-02  |  2/12/2019 1800");
                             break;
                         }
@@ -104,7 +106,7 @@ public final class Tkit {
                         if (firstSplit.length < 2 || firstSplit[0].trim().isEmpty()) {
                             ui.error("I do not understand this input format.\n"
                                     + "Wrong event input format.\n"
-                                    + "Please try format: event <EVENT> /from <START> /to <END>");
+                                    + "Please try: event <EVENT> /from <START> /to <END>");
                             break;
                         }
                         String[] secondSplit = firstSplit[1].split("\\s*/to\\s*", 2);
@@ -113,14 +115,14 @@ public final class Tkit {
                                 || secondSplit[1].trim().isEmpty()) {
                             ui.error("I do not understand this input format.\n"
                                     + "Wrong event input format.\n"
-                                    + "Use: event <EVENT> /from <START> /to <END>");
+                                    + "Please try: event <EVENT> /from <START> /to <END>");
                             break;
                         }
                         var from = DateTimeUtil.tryParseToLdt(secondSplit[0].trim());
                         var to = DateTimeUtil.tryParseToLdt(secondSplit[1].trim());
                         if (from == null || to == null) {
                             ui.error("I do not understand this input format.\n"
-                                    + "Use: event <EVENT> /from <START> /to <END>\n"
+                                    + "Please try: event <EVENT> /from <START> /to <END>\n"
                                     + "Examples: 2019-12-02 1400  |  2019-12-02  |  2/12/2019 1600");
                             break;
                         }
@@ -152,15 +154,23 @@ public final class Tkit {
                         if (arg.isEmpty()) {
                             ui.error("I do not understand this input format.\n"
                                     + "Delete requires an index. "
-                                    + "Please try format: delete <TASK_NUMBER>");
+                                    + "Please try: delete <TASK_NUMBER> or delete N, M, ...");
                             break;
                         }
-                        int index = parseIndex(arg, tasks.size());
-                        Task removed = tasks.removeAt(index);
-                        storage.save(tasks.view());
-                        ui.removed(removed, tasks.size());
+                        List<Integer> indices = parseMultipleIndices(arg, tasks.size()); // zero-based, descending
+                        if (indices.size() == 1) {
+                            int index = indices.get(0);
+                            Task removed = tasks.removeAt(index);
+                            storage.save(tasks.view());
+                            ui.removed(removed, tasks.size());
+                        } else {
+                            List<Task> removed = tasks.removeManyDescending(indices);
+                            storage.save(tasks.view());
+                            ui.removedMany(removed, tasks.size());
+                        }
                         break;
                     }
+
 
                     case ON: {
                         String raw = parsed.argOrEmpty().trim();
@@ -230,4 +240,48 @@ public final class Tkit {
             throw new TkitException("Task number must be of type int. Received: \"" + trimmed + "\"");
         }
     }
+
+    /**
+     * Parses one or more 1-based indices (comma/whitespace separated).
+     * Validates range against currentSize. Throws with a message that lists
+     * the non-existent 1-based indices and guarantees no mutation should occur.
+     *
+     * @return zero-based, unique, strictly descending indices
+     */
+    private static List<Integer> parseMultipleIndices(String user, int currentSize) throws TkitException {
+        assert currentSize >= 0;
+        String s = user == null ? "" : user.trim();
+        if (s.isEmpty()) {
+            throw new TkitException("Delete requires at least one index. Use: delete <N[, M, ...]>");
+        }
+        String[] tokens = s.split("[,\\s]+");
+        List<Integer> oneBased = new java.util.ArrayList<>();
+        for (String tok : tokens) {
+            if (tok.isBlank()) continue;
+            try {
+                oneBased.add(Integer.parseInt(tok));
+            } catch (NumberFormatException nfe) {
+                throw new TkitException("Task number must be of type int. Received: \"" + tok + "\"");
+            }
+        }
+        if (oneBased.isEmpty()) {
+            throw new TkitException("Delete requires at least one index. Use: delete <N[, M, ...]>");
+        }
+        List<Integer> oob = new java.util.ArrayList<>();
+        for (int ob : oneBased) {
+            int zb = ob - 1;
+            if (zb < 0 || zb >= currentSize) oob.add(ob);
+        }
+        if (!oob.isEmpty()) {
+            String bad = oob.stream().sorted().map(String::valueOf)
+                    .reduce((a, b) -> a + ", " + b).orElse("");
+            throw new TkitException("These task number(s) do not exist: " + bad + ". No tasks were deleted.");
+        }
+        java.util.Set<Integer> uniq = new java.util.HashSet<>(oneBased);
+        java.util.List<Integer> zeroBased = new java.util.ArrayList<>();
+        for (int ob : uniq) zeroBased.add(ob - 1);
+        zeroBased.sort(java.util.Collections.reverseOrder());
+        return zeroBased;
+    }
+
 }

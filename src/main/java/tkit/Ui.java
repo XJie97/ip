@@ -155,4 +155,26 @@ final class Ui {
         System.out.println(msg);
         System.out.println("____________________\n");
     }
+
+    /**
+     * Prints a bulk "removed" confirmation block.
+     *
+     * @param removed tasks removed, ordered as processed
+     * @param newSize resulting list size
+     */
+    void removedMany(List<Task> removed, int newSize) {
+        assert removed != null && newSize >= 0;
+        System.out.println("____________________\n");
+        if (removed.isEmpty()) {
+            System.out.println("No tasks were removed.");
+        } else {
+            System.out.println("Noted. I've removed " + removed.size() + " task(s):");
+            for (Task t : removed) {
+                System.out.println("  " + t);
+            }
+            System.out.println("Now you have " + newSize + " tasks in the list.");
+        }
+        System.out.println("____________________\n");
+    }
+
 }
