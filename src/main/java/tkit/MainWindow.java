@@ -14,7 +14,8 @@ import javafx.scene.layout.VBox;
 public class MainWindow {
 
     private static final String WELCOME =
-            "Tkit ready. Commands: list | todo | deadline | event | mark | unmark | delete | on | find | bye";
+            "Tkit ready."
+        +    "Commands: list | todo | deadline | event | mark | unmark | delete | on | find | bye";
 
     @FXML private ScrollPane scrollPane;
     @FXML private VBox dialogContainer;

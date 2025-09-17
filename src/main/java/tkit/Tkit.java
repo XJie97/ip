@@ -63,7 +63,7 @@ public final class Tkit {
                         if (description.isEmpty()) {
                             ui.error("I do not understand this input format\n"
                                     + "Todo requires a description."
-                                    + "Please try Format: todo <DESCRIPTION>");
+                                    + "Please try: todo <DESCRIPTION>");
                             break;
                         }
                         Task task = new Todo(description);
@@ -79,7 +79,7 @@ public final class Tkit {
                         if (parts.length < 2 || parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
                             ui.error("I do not understand this input format\n"
                                     + "Wrong deadline input format.\n"
-                                    + "Please try format: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
+                                    + "Please try: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
                                     + "Examples: 2019-12-02 1800  |  2019-12-02  |  2/12/2019 1800");
                             break;
                         }
@@ -87,7 +87,7 @@ public final class Tkit {
                         if (by == null) {
                             ui.error("I do not recognize this date/time format: \""
                                     + parts[1].trim()
-                                    + "\"\nPlease try format: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
+                                    + "\"\nPlease try: deadline <TASK> /by <DATE_OR_DATE_TIME>\n"
                                     + "Examples: 2019-12-02 1800  |  2019-12-02  |  2/12/2019 1800");
                             break;
                         }
@@ -104,7 +104,8 @@ public final class Tkit {
                         if (firstSplit.length < 2 || firstSplit[0].trim().isEmpty()) {
                             ui.error("I do not understand this input format.\n"
                                     + "Wrong event input format.\n"
-                                    + "Please try format: event <EVENT> /from <START> /to <END>");
+                                    + "Please try: event <EVENT> /from <START> /to <END>.\n"
+                                    + "Examples: 2019-12-02 1400  |  2019-12-02  |  2/12/2019 1600");
                             break;
                         }
                         String[] secondSplit = firstSplit[1].split("\\s*/to\\s*", 2);
@@ -113,7 +114,8 @@ public final class Tkit {
                                 || secondSplit[1].trim().isEmpty()) {
                             ui.error("I do not understand this input format.\n"
                                     + "Wrong event input format.\n"
-                                    + "Use: event <EVENT> /from <START> /to <END>");
+                                    + "Use: event <EVENT> /from <START> /to <END>.\n"
+                                    + "Examples: 2019-12-02 1400  |  2019-12-02  |  2/12/2019 1600");
                             break;
                         }
                         var from = DateTimeUtil.tryParseToLdt(secondSplit[0].trim());
@@ -152,7 +154,7 @@ public final class Tkit {
                         if (arg.isEmpty()) {
                             ui.error("I do not understand this input format.\n"
                                     + "Delete requires an index. "
-                                    + "Please try format: delete <TASK_NUMBER>");
+                                    + "Please try: delete <TASK_NUMBER>");
                             break;
                         }
                         int index = parseIndex(arg, tasks.size());
