@@ -1,6 +1,8 @@
 package tkit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +34,7 @@ class CommandProcessorTest {
      * Uses relative indices computed from current list size to avoid assuming prior state.
      */
     @Test
-    void handle_deadlineEvent_find_on_mark_unmark_delete_unknown() {
+    void handleDeadlineEventFindOnMarkUnmarkDeleteUnknown() {
         CommandProcessor cp = new CommandProcessor();
 
         // Add deadline and event
@@ -52,7 +54,6 @@ class CommandProcessorTest {
         // Add a simple todo and compute its index from the current list length
         String addX = cp.handle("todo x");
         assertTrue(addX.contains("Added:"));
-        // Extract "Now you have N task(s) in the list." and compute N as the 1-based index
         int lastIdx = extractCount(addX);
 
         String marked = cp.handle("mark " + lastIdx);
@@ -61,7 +62,7 @@ class CommandProcessorTest {
         assertTrue(unmarked.contains("Marked as not done:"));
         String removed = cp.handle("delete " + lastIdx);
         assertTrue(removed.contains("Removed:"));
-        assertTrue(removed.contains("Now you have ")); // remaining count varies by environment
+        assertTrue(removed.contains("Now you have "));
 
         String unknown = cp.handle("abracadabra");
         assertTrue(unknown.contains("Unknown command"));

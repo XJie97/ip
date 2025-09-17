@@ -1,8 +1,9 @@
 package tkit;
 
-import java.util.Scanner;
+
 
 import java.util.List;
+import java.util.Scanner;
 
 import tkit.Parser.SplitCommand;
 
@@ -257,7 +258,9 @@ public final class Tkit {
         String[] tokens = s.split("[,\\s]+");
         List<Integer> oneBased = new java.util.ArrayList<>();
         for (String tok : tokens) {
-            if (tok.isBlank()) continue;
+            if (tok.isBlank()) {
+                continue;
+            }
             try {
                 oneBased.add(Integer.parseInt(tok));
             } catch (NumberFormatException nfe) {
@@ -270,7 +273,9 @@ public final class Tkit {
         List<Integer> oob = new java.util.ArrayList<>();
         for (int ob : oneBased) {
             int zb = ob - 1;
-            if (zb < 0 || zb >= currentSize) oob.add(ob);
+            if (zb < 0 || zb >= currentSize) {
+                oob.add(ob);
+            }
         }
         if (!oob.isEmpty()) {
             String bad = oob.stream().sorted().map(String::valueOf)
@@ -279,7 +284,9 @@ public final class Tkit {
         }
         java.util.Set<Integer> uniq = new java.util.HashSet<>(oneBased);
         java.util.List<Integer> zeroBased = new java.util.ArrayList<>();
-        for (int ob : uniq) zeroBased.add(ob - 1);
+        for (int ob : uniq) {
+            zeroBased.add(ob - 1);
+        }
         zeroBased.sort(java.util.Collections.reverseOrder());
         return zeroBased;
     }

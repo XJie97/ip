@@ -5,3 +5,4 @@
 - Troubleshooting JavaFX layout issues with MainWindow.fxml, chat.css
 - Debugging code compilation errors
 - Generation of a properly documented README.md with GFMD formatting
+- Generation of git commit message body per git conventions

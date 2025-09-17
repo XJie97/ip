@@ -1,5 +1,7 @@
 # Tkit — CLI Task Manager Chatbot
 
+<img src="docs/UI.png" alt="Tkit" width="720">
+
 > Cross‑platform, Java 17. Minimal, durable, and testable.
 
 ---

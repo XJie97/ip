@@ -197,7 +197,9 @@ final class CommandProcessor {
         String[] tokens = s.split("[,\\s]+");
         List<Integer> oneBased = new java.util.ArrayList<>();
         for (String tok : tokens) {
-            if (tok.isBlank()) continue;
+            if (tok.isBlank()) {
+                continue;
+            }
             try {
                 oneBased.add(Integer.parseInt(tok));
             } catch (NumberFormatException nfe) {
@@ -226,7 +228,9 @@ final class CommandProcessor {
         // De-duplicate and convert to zero-based descending for safe deletion
         java.util.Set<Integer> uniq = new java.util.HashSet<>(oneBased);
         java.util.List<Integer> zeroBased = new java.util.ArrayList<>();
-        for (int ob : uniq) zeroBased.add(ob - 1);
+        for (int ob : uniq) {
+            zeroBased.add(ob - 1);
+        }
         zeroBased.sort(java.util.Collections.reverseOrder());
         return zeroBased;
     }
