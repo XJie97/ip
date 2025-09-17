@@ -333,7 +333,3 @@ Add unit tests under `src/test/java/tkit/` (e.g., `CommandProcessorTest`, `TaskL
 * **Date rejected**: Conform to accepted formats listed above.
 
 ---
-
-## License
-
-Insert your license text here (e.g., MIT).
